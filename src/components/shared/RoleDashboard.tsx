@@ -64,6 +64,7 @@ const dashboardData: Record<Role, {
       { title: 'Commandes', description: 'Filtrer et assigner les courses.', path: '/manager', icon: faBox },
       { title: 'Statistiques de zone', description: 'Jour, semaine et mois.', path: '/manager', icon: faChartSimple },
       { title: 'Disponibilités', description: 'Suivre les livreurs actifs.', path: '/manager', icon: faCircleCheck },
+      { title: 'Gestion des zones', description: 'Zones, tarifs et points de repère.', path: '/manager/zones', icon: faMapLocationDot },
     ],
   },
   admin: {

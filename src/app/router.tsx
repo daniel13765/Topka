@@ -11,6 +11,7 @@ import { NegotiationsPage } from '../pages/client/NegotiationsPage';
 import { NotificationsPage } from '../pages/client/NotificationsPage';
 import { LivreurDashboardPage } from '../pages/livreur/LivreurDashboardPage';
 import { ManagerDashboardPage } from '../pages/manager/ManagerDashboardPage';
+import { ManagerZonesPage } from '../pages/manager/ManagerZonesPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { RoleGuard } from '../routes/guards/RoleGuard';
 
@@ -34,6 +35,7 @@ export function AppRouter() {
       </Route>
       <Route element={<RoleGuard allowed={['manager']} />}>
         <Route path="/manager" element={<ManagerDashboardPage />} />
+        <Route path="/manager/zones" element={<ManagerZonesPage />} />
       </Route>
       <Route element={<RoleGuard allowed={['admin']} />}>
         <Route path="/admin" element={<AdminDashboardPage />} />

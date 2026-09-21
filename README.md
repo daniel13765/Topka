@@ -42,6 +42,7 @@ npm run build
 - `/catalogue` : catalogue avec recherche, filtres et tri
 - `/produit/:productId` : détail produit, panier et négociation
 - `/client/negociations` : suivi des offres et contre-propositions
+- `/manager/zones` : gestion des zones, tarifs et points de repère
 - `/livreur` : espace livreur
 - `/manager` : espace manager
 - `/admin` : espace administrateur
