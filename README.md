@@ -14,7 +14,7 @@ Application React responsive et dynamique pour TOKPa, le marché de proximité b
 - Images de marché et assets visuels TOKPa intégrés dans `public/images/`
 - Adaptateurs isolés pour géolocalisation et FedaPay
 
-## Démarrage macOS, Linux ou terminal Windows
+## Démarrage
 
 ```bash
 npm install
@@ -23,16 +23,6 @@ npm run dev
 ```
 
 Le serveur écoute sur `http://localhost:5173`. L’API frontend utilise `/api`; Vite la proxyfie vers `VITE_BACKEND_URL` côté serveur de développement.
-
-### Démarrage Windows en double-clic
-
-Depuis l’archive du projet :
-
-1. `scripts\\installer-tokpa.bat` installe les dépendances.
-2. `scripts\\lancer-tokpa.bat` démarre Vite et ouvre le navigateur.
-3. `scripts\\arreter-tokpa.bat` arrête la fenêtre serveur.
-
-Les instructions détaillées sont dans [`README-WINDOWS.md`](README-WINDOWS.md).
 
 ## Vérifications
 
