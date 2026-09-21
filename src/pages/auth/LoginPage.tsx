@@ -60,6 +60,9 @@ export function LoginPage() {
                 );
               })}
             </div>
+            <div className="mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-500">
+              Nouveau sur TOKPa ? <Link to="/inscription" className="font-bold text-brand-600 hover:text-brand-700">Créer mon compte</Link>
+            </div>
           </Card>
         </div>
       </div>

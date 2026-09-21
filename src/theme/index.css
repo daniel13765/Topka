@@ -104,4 +104,12 @@ a {
   .eyebrow {
     @apply text-xs font-bold uppercase tracking-[0.16em] text-brand-600;
   }
+
+  .field-label {
+    @apply block text-sm font-semibold text-slate-600;
+  }
+
+  .field-input {
+    @apply mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100;
+  }
 }

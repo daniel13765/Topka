@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/auth/LoginPage';
+import { RegisterPage } from '../pages/auth/RegisterPage';
+import { EmailVerificationPage } from '../pages/auth/EmailVerificationPage';
 import { NotFoundPage } from '../pages/errors/NotFoundPage';
 import { ClientDashboardPage } from '../pages/client/ClientDashboardPage';
 import { NotificationsPage } from '../pages/client/NotificationsPage';
@@ -14,6 +16,8 @@ export function AppRouter() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/connexion" element={<LoginPage />} />
+      <Route path="/inscription" element={<RegisterPage />} />
+      <Route path="/verification-email" element={<EmailVerificationPage />} />
 
       <Route element={<RoleGuard allowed={['client']} />}>
         <Route path="/client" element={<ClientDashboardPage />} />

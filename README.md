@@ -35,6 +35,8 @@ npm run build
 
 - `/` : vue d’ensemble
 - `/connexion` : accès de démonstration par rôle
+- `/inscription` : inscription en deux étapes (profil puis sécurité)
+- `/verification-email` : vérification du code e-mail (code démo `427913`)
 - `/client` : espace client
 - `/client/notifications` : centre de notifications dynamique
 - `/livreur` : espace livreur
