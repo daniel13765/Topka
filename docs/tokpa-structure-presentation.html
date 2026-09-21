@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOKPa — Structure du projet React</title>
+<style>
+  :root{
+    --orange:#F97316; --orange-hover:#EA580C; --orange-light:#FFF7ED; --orange-border:#FED7AA;
+    --amber:#F59E0B; --green:#10B981; --sky:#0284C7; --indigo:#4F46E5;
+    --ink:#111827; --ink-2:#6B7280; --ink-3:#9CA3AF;
+    --bg:#F3F4F6; --card:#FFFFFF; --border:#E5E7EB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:15px; line-height:1.5; padding:24px 16px 48px;
+  }
+  .wrap{max-width:1200px; margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--card); border:0.5px solid var(--border); border-radius:14px;
+    padding:24px; display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between;
+  }
+  .logo{font-size:26px; font-weight:700; letter-spacing:-0.5px;}
+  .logo span{color:var(--orange);}
+  .tagline{font-size:13px; color:var(--ink-2);}
+  .head-right{text-align:right;}
+  .head-right h1{font-size:20px; font-weight:600;}
+  .head-right p{font-size:13px; color:var(--ink-2);}
+  .pill{
+    display:inline-block; background:var(--orange); color:#fff; border-radius:12px;
+    padding:4px 14px; font-size:12px; font-weight:600; margin-top:6px;
+  }
+
+  /* ---------- Stats ---------- */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0;}
+  .stat{background:#F9FAFB; border-radius:10px; padding:14px 16px;}
+  .stat .lbl{font-size:12px; color:var(--ink-2);}
+  .stat .val{font-size:22px; font-weight:500;}
+  .stat .val em{font-style:normal; color:var(--orange); font-weight:700;}
+
+  /* ---------- Layout principal ---------- */
+  .main{display:grid; grid-template-columns:2fr 1fr; gap:16px; align-items:start;}
+  @media (max-width:900px){ .main{grid-template-columns:1fr;} .stats{grid-template-columns:repeat(2,1fr);} }
+
+  .panel{background:var(--card); border:0.5px solid var(--border); border-radius:14px; padding:20px;}
+  .panel h2{font-size:16px; font-weight:600; margin-bottom:4px;}
+  .panel .sub{font-size:13px; color:var(--ink-2); margin-bottom:14px;}
+
+  /* ---------- Barre d'outils arbre ---------- */
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .toolbar input{
+    flex:1; min-width:160px; background:#fff; border:1.5px solid var(--border); border-radius:10px;
+    padding:8px 14px; font-size:14px; font-family:inherit; color:var(--ink); outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .toolbar input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(249,115,22,.15);}
+  .btn{
+    background:var(--orange-light); color:#C2410C; border:1.5px solid var(--orange-border);
+    border-radius:10px; padding:8px 14px; font-size:13px; font-weight:500; cursor:pointer;
+    font-family:inherit; transition:background .15s, transform .1s;
+  }
+  .btn:hover{background:var(--orange-border);}
+  .btn:active{transform:scale(.97);}
+
+  /* ---------- Arbre ---------- */
+  ul.tree, ul.tree ul{list-style:none;}
+  ul.tree{font-family:'SF Mono',Consolas,'Liberation Mono',monospace; font-size:13.5px;}
+  ul.tree ul{margin-left:22px; border-left:1px dashed var(--border); padding-left:10px;}
+  ul.tree li{margin:2px 0;}
+  .row{
+    display:flex; align-items:baseline; gap:7px; padding:4px 8px; border-radius:8px; cursor:pointer;
+    transition:background .15s;
+  }
+  .row:hover{background:var(--orange-light);}
+  .row .chev{
+    flex:0 0 12px; color:var(--ink-3); font-size:10px; transition:transform .15s; transform:rotate(0deg);
+    font-family:inherit;
+  }
+  li.open > .row .chev{transform:rotate(90deg);}
+  .row .dot{flex:0 0 8px; width:8px; height:8px; border-radius:50%; align-self:center;}
+  .row .fname{font-weight:600; color:var(--ink);}
+  .row .fname::after{content:"/"; color:var(--ink-3); font-weight:400;}
+  .row .cnt{
+    font-size:11px; color:var(--ink-2); background:#F9FAFB; border:0.5px solid var(--border);
+    border-radius:20px; padding:1px 8px; font-family:'Inter',sans-serif;
+  }
+  .row .desc{
+    font-family:'Inter',sans-serif; font-size:12px; color:var(--ink-2); font-weight:400;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  @media (max-width:700px){ .row .desc{display:none;} }
+  li:not(.open) > ul{display:none;}
+  li.hidden{display:none;}
+  mark{background:var(--orange-border); color:#7C2D12; border-radius:3px; padding:0 1px;}
+
+  /* dots par rôle */
+  .d-root{background:#111827;} .d-client{background:var(--orange);} .d-livreur{background:var(--green);}
+  .d-manager{background:var(--sky);} .d-admin{background:var(--indigo);}
+  .d-ui{background:var(--amber);} .d-tech{background:#6B7280;}
+
+  /* ---------- Panneau droit ---------- */
+  .legend{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+  .legend .item{display:flex; align-items:center; gap:10px; font-size:13px;}
+  .legend .dot{width:10px; height:10px; border-radius:50%; flex:0 0 10px;}
+  .legend b{font-weight:600;}
+  .legend .n{margin-left:auto; color:var(--ink-2); font-size:12px;}
+
+  .roles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .role{border-radius:10px; padding:12px 14px; border:1px solid;}
+  .role h3{font-size:14px; font-weight:600; display:flex; align-items:center; gap:7px;}
+  .role p{font-size:12px; margin-top:4px;}
+  .r-client{background:#FFF7ED; border-color:#FED7AA; color:#7C2D12;}
+  .r-livreur{background:#ECFDF5; border-color:#6EE7B7; color:#065F46;}
+  .r-manager{background:#F0F9FF; border-color:#BAE6FD; color:#075985;}
+  .r-admin{background:#EEF2FF; border-color:#C7D2FE; color:#3730A3;}
+
+  .notes{margin-top:14px; font-size:13px; color:var(--ink-2);}
+  .notes li{margin:6px 0 6px 18px;}
+  .notes b{color:var(--ink);}
+  .zip{
+    margin-top:14px; background:#F9FAFB; border:1px dashed var(--border); border-radius:10px;
+    padding:10px 14px; font-size:12.5px; color:var(--ink-2);
+  }
+  .zip code{color:#C2410C; font-weight:600;}
+
+  footer{margin-top:24px; text-align:center; font-size:12px; color:var(--ink-3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="logo">TOK<span>Pa</span></div>
+      <div class="tagline">Ton marché, ta façon — Marché Digital Bénin</div>
+    </div>
+    <div class="head-right">
+      <h1>Structure du projet React</h1>
+      <p>Vite · Tailwind · Redux Toolkit · Laravel Reverb</p>
+      <span class="pill">Frontend — MVP 3 mois</span>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="lbl">Dossiers</div><div class="val"><em>92</em></div></div>
+    <div class="stat"><div class="lbl">Fichiers</div><div class="val">0</div></div>
+    <div class="stat"><div class="lbl">Interfaces (rôles)</div><div class="val">4</div></div>
+    <div class="stat"><div class="lbl">Écrans Stitch mappés</div><div class="val">31</div></div>
+  </div>
+
+  <div class="main">
+    <!-- ================= ARBRE ================= -->
+    <section class="panel">
+      <h2>Arborescence interactive</h2>
+      <p class="sub">Cliquez sur un dossier pour le déplier / replier. La recherche filtre en direct.</p>
+      <div class="toolbar">
+        <input id="search" type="text" placeholder="Rechercher un dossier (ex : cart, zones, tracking…)">
+        <button class="btn" id="expand">Tout déplier</button>
+        <button class="btn" id="collapse">Tout replier</button>
+      </div>
+      <ul class="tree" id="tree"></ul>
+    </section>
+
+    <!-- ================= PANNEAU DROIT ================= -->
+    <aside>
+      <section class="panel">
+        <h2>Légende des rôles</h2>
+        <p class="sub">Chaque dossier est coloré selon l'interface qu'il sert.</p>
+        <div class="legend">
+          <div class="item"><span class="dot d-root"></span><b>Racine / structure</b></div>
+          <div class="item"><span class="dot d-client"></span><b>Client</b><span class="n">14 écrans</span></div>
+          <div class="item"><span class="dot d-livreur"></span><b>Livreur</b><span class="n">6 écrans</span></div>
+          <div class="item"><span class="dot d-manager"></span><b>Manager</b><span class="n">2 écrans</span></div>
+          <div class="item"><span class="dot d-admin"></span><b>Admin</b><span class="n">8 écrans</span></div>
+          <div class="item"><span class="dot d-ui"></span><b>Design system</b><span class="n">design.md</span></div>
+          <div class="item"><span class="dot d-tech"></span><b>Technique</b><span class="n">API, GPS, paiement</span></div>
+        </div>
+
+        <div class="roles">
+          <div class="role r-client"><h3>🛒 Client</h3><p>Catalogue, panier, négociation, suivi GPS, chat.</p></div>
+          <div class="role r-livreur"><h3>🛵 Livreur</h3><p>Courses, GPS temps réel, gros boutons mobiles.</p></div>
+          <div class="role r-manager"><h3>🗺️ Manager</h3><p>Commandes de sa zone, assignation, stats.</p></div>
+          <div class="role r-admin"><h3>👑 Admin</h3><p>CRUD, zones, budgets, audit, dashboard global.</p></div>
+        </div>
+
+        <ul class="notes">
+          <li><b>theme/ + components/ui/</b> : le design system (design.md) codé une seule fois, réutilisé sur les 31 écrans.</li>
+          <li><b>pages/{rôle}/{écran}/</b> : 1 dossier = 1 écran du design Stitch → conversion 1:1.</li>
+          <li><b>services/</b> : API (RTK Query), temps réel (Reverb), FedaPay, géolocalisation — isolés et mockables.</li>
+          <li><b>routes/</b> : guards par rôle (client / livreur / manager / admin).</li>
+        </ul>
+
+        <div class="zip">📦 Archive disponible : <code>tokpa-frontend-structure.zip</code> (92 dossiers, 0 fichier).</div>
+      </section>
+    </aside>
+  </div>
+
+  <footer>TOKPa — Cahier des charges v2.0 · Design Stitch v2 · Structure frontend générée le 14/09/2026</footer>
+</div>
+
+<script>
+const TREE = {
+  name:'tokpa-frontend', role:'root', desc:'Racine du projet React (Vite + Tailwind + Redux Toolkit)', children:[
+    { name:'public', role:'tech', desc:'Assets statiques servis tels quels', children:[
+      { name:'images', role:'tech', children:[
+        { name:'brand', role:'client', desc:'Illustrations hero du marché béninois (Stitch)' },
+        { name:'placeholders', role:'client', desc:'Dégradés produits par catégorie (légumes, poisson, packs…)' },
+      ]},
+    ]},
+    { name:'src', role:'root', desc:'Code source de l’application', children:[
+      { name:'app', role:'root', desc:'Providers Redux, Router, Echo (WebSocket)' },
+      { name:'assets', role:'tech', children:[
+        { name:'fonts', role:'tech', desc:'Inter 400 → 700' },
+        { name:'images', role:'tech', children:[
+          { name:'brand', role:'client', desc:'Logo & variantes (pill, bicolore)' },
+          { name:'illustrations', role:'client', desc:'Visuels marchés & bannières' },
+        ]},
+      ]},
+      { name:'theme', role:'ui', desc:'Tokens design.md : #F97316, #F59E0B, radius 14px, spacing…' },
+      { name:'components', role:'ui', desc:'Composants réutilisables', children:[
+        { name:'ui', role:'ui', desc:'Button, Input, Badge, StatusBadge, Card, Avatar, ProgressBar, Skeleton…' },
+        { name:'layout', role:'ui', desc:'Coquilles de navigation par rôle', children:[
+          { name:'client', role:'client', desc:'Navbar marchande + footer' },
+          { name:'livreur', role:'livreur', desc:'Shell mobile, boutons ≥ 52px' },
+          { name:'manager', role:'manager', desc:'Shell avec filtres de zone persistants' },
+          { name:'admin', role:'admin', desc:'Sidebar verticale desktop' },
+        ]},
+        { name:'shared', role:'ui', desc:'Transverses : bulles de chat, stepper statuts, pagination…' },
+        { name:'client', role:'client', children:[
+          { name:'catalog', role:'client', desc:'ProductCard, FiltersSidebar, SearchBar, CategoryGrid' },
+          { name:'cart', role:'client', desc:'CartLine, CartSummary,QuantityPicker' },
+          { name:'negotiation', role:'client', desc:'Module ambre « Proposer un budget » (border-left #F59E0B)' },
+          { name:'tracking', role:'client', desc:'LiveMap, StatusOverlay, OrderStepper' },
+          { name:'chat', role:'client', desc:'ConversationHeader, MessageBubble, ChatInput' },
+        ]},
+        { name:'livreur', role:'livreur', children:[
+          { name:'delivery', role:'livreur', desc:'DeliveryCard, AcceptRefuse (vert/rouge)' },
+          { name:'tracking', role:'livreur', desc:'Émetteur GPS (watchPosition)' },
+          { name:'chat', role:'livreur', desc:'Chat côté livreur' },
+        ]},
+        { name:'manager', role:'manager', children:[
+          { name:'orders', role:'manager', desc:'Tableau Commande/Client/Statut/Livreur/Actions' },
+          { name:'stats', role:'manager', desc:'Cartes statistiques de zone' },
+        ]},
+        { name:'admin', role:'admin', children:[
+          { name:'catalog', role:'admin', desc:'Formulaires produit (prix + prix minimum), upload Cloudinary' },
+          { name:'zones', role:'admin', desc:'Carte polygones + points de repère' },
+          { name:'budgets', role:'admin', desc:'File de validation Accepter/Refuser' },
+          { name:'team', role:'admin', desc:'CRUD managers & livreurs, zones, disponibilité' },
+          { name:'audit', role:'admin', desc:'Timeline verticale des logs horodatés' },
+        ]},
+      ]},
+      { name:'pages', role:'root', desc:'1 dossier = 1 écran du design Stitch (31 écrans)', children:[
+        { name:'auth', role:'ui', desc:'Connexion, Inscription, Vérification 2FA, mot de passe oublié' },
+        { name:'errors', role:'ui', desc:'Page 404' },
+        { name:'client', role:'client', children:[
+          { name:'accueil', role:'client', desc:'Hero « Ton marché, ta façon » + sélection du jour' },
+          { name:'catalogue', role:'client', desc:'Filtres, tri, pagination, grille 2→4 colonnes' },
+          { name:'fiche-produit', role:'client', desc:'Détails + module de négociation' },
+          { name:'panier', role:'client', desc:'Panier + caisse (frais de livraison affichés)' },
+          { name:'confirmation-commande', role:'client', desc:'Récap + paiement FedaPay' },
+          { name:'suivi-commande', role:'client', desc:'Carte GPS plein écran + overlay statut' },
+          { name:'negociations', role:'client', desc:'Mes propositions : en attente / acceptées / refusées' },
+          { name:'profil', role:'client', desc:'Infos + points de repère sauvegardés, favoris' },
+          { name:'messagerie', role:'client', desc:'Chat Client ↔ Livreur' },
+          { name:'notifications', role:'client', desc:'Historique des notifications' },
+        ]},
+        { name:'livreur', role:'livreur', children:[
+          { name:'dashboard', role:'livreur', desc:'Livraisons assignées, Accepter/Refuser' },
+          { name:'course-active', role:'livreur', desc:'Vue GPS mobile + desktop' },
+          { name:'recap-fin-course', role:'livreur', desc:'Récapitulatif de livraison terminée' },
+          { name:'historique-livraisons', role:'livreur', desc:'Courses effectuées' },
+          { name:'messagerie', role:'livreur', desc:'Chat côté livreur' },
+        ]},
+        { name:'manager', role:'manager', children:[
+          { name:'dashboard', role:'manager', desc:'Commandes de la zone + assignation livreurs' },
+          { name:'statistiques-zone', role:'manager', desc:'Stats jour/semaine/mois de sa zone' },
+        ]},
+        { name:'admin', role:'admin', children:[
+          { name:'dashboard', role:'admin', desc:'Indicateurs clés globaux' },
+          { name:'catalogue', role:'admin', desc:'CRUD produits paginé' },
+          { name:'categories', role:'admin', desc:'CRUD catégories' },
+          { name:'zones', role:'admin', desc:'Zones géographiques & points de repère' },
+          { name:'livreurs', role:'admin', desc:'Gestion des livreurs' },
+          { name:'equipe', role:'admin', desc:'Gestion managers & utilisateurs' },
+          { name:'budgets', role:'admin', desc:'Validation des propositions de prix' },
+          { name:'logs-audit', role:'admin', desc:'Traçabilité horodatée des actions critiques' },
+        ]},
+      ]},
+      { name:'store', role:'tech', desc:'Store Redux Toolkit', children:[
+        { name:'slices', role:'tech', children:[
+          { name:'auth', role:'tech', desc:'Token Sanctum, 2FA, session' },
+          { name:'cart', role:'client', desc:'Panier persistant' },
+          { name:'catalog', role:'client', desc:'Produits, filtres, recherche' },
+          { name:'orders', role:'tech', desc:'Commandes & statuts (flux unique)' },
+          { name:'negotiation', role:'client', desc:'Propositions de budget' },
+          { name:'chat', role:'tech', desc:'Conversations & messages' },
+          { name:'tracking', role:'tech', desc:'Positions GPS temps réel' },
+          { name:'notifications', role:'tech', desc:'File de notifications' },
+        ]},
+      ]},
+      { name:'services', role:'tech', desc:'Logique technique isolée & mockable', children:[
+        { name:'api', role:'tech', desc:'Endpoints RTK Query (contrat Swagger backend)' },
+        { name:'realtime', role:'tech', desc:'laravel-echo + pusher-js → Reverb (GPS, chat)' },
+        { name:'payment', role:'tech', desc:'FedaPay Checkout' },
+        { name:'geolocation', role:'tech', desc:'watchPosition du livreur' },
+      ]},
+      { name:'hooks', role:'tech', desc:'useAuth, useCart, useEcho, useGeolocation…' },
+      { name:'routes', role:'tech', desc:'Router + guards par rôle' },
+      { name:'utils', role:'tech', desc:'formatFCFA (« 1 800 FCFA »), dates, statuts' },
+      { name:'constants', role:'tech', desc:'Enums : statuts commande, rôles, badges…' },
+      { name:'types', role:'tech', desc:'Types TS : Product, Order, BudgetProposal, Zone…' },
+    ]},
+  ]
+};
+
+function countDeep(node){
+  if(!node.children) return 0;
+  return node.children.reduce((a,c)=>a+1+countDeep(c),0);
+}
+
+function esc(s){ return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function render(node, isRoot){
+  const li = document.createElement('li');
+  li.className = 'open';
+  const row = document.createElement('div');
+  row.className = 'row';
+  const hasKids = !!(node.children && node.children.length);
+  row.innerHTML =
+    '<span class="chev">'+(hasKids?'▶':'&nbsp;')+'</span>' +
+    '<span class="dot d-'+(node.role||'tech')+'"></span>' +
+    '<span class="fname">'+esc(node.name)+'</span>' +
+    (hasKids ? '<span class="cnt">'+countDeep(node)+'</span>' : '') +
+    (node.desc ? '<span class="desc">'+esc(node.desc)+'</span>' : '');
+  row.dataset.name = node.name.toLowerCase();
+  row.dataset.desc = (node.desc||'').toLowerCase();
+  li.appendChild(row);
+  if(hasKids){
+    const ul = document.createElement('ul');
+    node.children.forEach(c=>ul.appendChild(render(c,false)));
+    li.appendChild(ul);
+    row.addEventListener('click', ()=>li.classList.toggle('open'));
+  } else {
+    row.style.cursor = 'default';
+  }
+  if(isRoot){ row.style.cursor='default'; }
+  return li;
+}
+
+const treeEl = document.getElementById('tree');
+treeEl.appendChild(render(TREE, true));
+
+document.getElementById('expand').addEventListener('click', ()=>{
+  treeEl.querySelectorAll('li').forEach(li=>li.classList.add('open'));
+});
+document.getElementById('collapse').addEventListener('click', ()=>{
+  treeEl.querySelectorAll('li').forEach(li=>{ if(li!==treeEl.firstElementChild) li.classList.remove('open'); });
+});
+
+/* ---- Recherche : montre les correspondances + leurs ancêtres ---- */
+const search = document.getElementById('search');
+search.addEventListener('input', ()=>{
+  const q = search.value.trim().toLowerCase();
+  const rows = [...treeEl.querySelectorAll('.row')];
+  // reset
+  rows.forEach(r=>{ r.querySelector('.fname').innerHTML = r.querySelector('.fname').textContent; });
+  treeEl.querySelectorAll('li').forEach(li=>li.classList.remove('hidden'));
+  if(!q) return;
+  // mark leaves/branches that don't match and have no matching descendant
+  function walk(li){
+    const row = li.querySelector(':scope > .row');
+    const match = row.dataset.name.includes(q) || row.dataset.desc.includes(q);
+    let kidMatch = false;
+    li.querySelectorAll(':scope > ul > li').forEach(child=>{ if(walk(child)) kidMatch = true; });
+    const show = match || kidMatch;
+    li.classList.toggle('hidden', !show);
+    if(show && kidMatch) li.classList.add('open');
+    if(match){ // highlight
+      const fn = row.querySelector('.fname');
+      const raw = fn.textContent;
+      const i = raw.toLowerCase().indexOf(q);
+      if(i>=0) fn.innerHTML = esc(raw.slice(0,i))+'<mark>'+esc(raw.slice(i,i+q.length))+'</mark>'+esc(raw.slice(i+q.length));
+    }
+    return show;
+  }
+  walk(treeEl.firstElementChild);
+});
+</script>
+</body>
+</html>
