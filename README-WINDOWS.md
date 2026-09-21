@@ -70,3 +70,13 @@ Le projet livré utilise les mocks tant que le backend Laravel n'est pas branch�
 ```env
 VITE_USE_MOCKS=true
 ```
+
+## Lanceurs rapides à la racine
+
+Les mêmes commandes sont également disponibles directement dans le dossier principal :
+
+```text
+installer-tokpa.bat
+lancer-tokpa.bat
+arreter-tokpa.bat
+```
