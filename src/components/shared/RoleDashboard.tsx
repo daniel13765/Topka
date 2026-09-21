@@ -1,4 +1,4 @@
-import { faArrowRight, faBasketShopping, faBox, faChartSimple, faCircleCheck, faComments, faHandshake, faLocationDot, faMapLocationDot, faMotorcycle, faTags, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faBasketShopping, faBell, faBox, faChartSimple, faCircleCheck, faComments, faHandshake, faLocationDot, faMapLocationDot, faMotorcycle, faTags, faUsers } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { Link } from 'react-router-dom';
 import { ROLE_DEFINITIONS } from '../../constants/roles';
@@ -33,6 +33,7 @@ const dashboardData: Record<Role, {
       { title: 'Ouvrir le catalogue', description: 'Produits, filtres et recherche.', path: '/client', icon: faBasketShopping },
       { title: 'Voir le suivi', description: 'Statut et position du livreur.', path: '/client', icon: faLocationDot },
       { title: 'Mes négociations', description: 'Propositions de budget.', path: '/client', icon: faHandshake },
+      { title: 'Notifications', description: 'Commandes, promotions et sécurité.', path: '/client/notifications', icon: faBell },
     ],
   },
   livreur: {

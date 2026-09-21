@@ -3,6 +3,7 @@ import {
   faArrowRight,
   faArrowRightLong,
   faBasketShopping,
+  faBell,
   faBottleWater,
   faBreadSlice,
   faCarrot,

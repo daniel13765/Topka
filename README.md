@@ -36,6 +36,7 @@ npm run build
 - `/` : vue d’ensemble
 - `/connexion` : accès de démonstration par rôle
 - `/client` : espace client
+- `/client/notifications` : centre de notifications dynamique
 - `/livreur` : espace livreur
 - `/manager` : espace manager
 - `/admin` : espace administrateur

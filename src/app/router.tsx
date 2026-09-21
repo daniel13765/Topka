@@ -3,6 +3,7 @@ import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { NotFoundPage } from '../pages/errors/NotFoundPage';
 import { ClientDashboardPage } from '../pages/client/ClientDashboardPage';
+import { NotificationsPage } from '../pages/client/NotificationsPage';
 import { LivreurDashboardPage } from '../pages/livreur/LivreurDashboardPage';
 import { ManagerDashboardPage } from '../pages/manager/ManagerDashboardPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
@@ -16,6 +17,7 @@ export function AppRouter() {
 
       <Route element={<RoleGuard allowed={['client']} />}>
         <Route path="/client" element={<ClientDashboardPage />} />
+        <Route path="/client/notifications" element={<NotificationsPage />} />
       </Route>
       <Route element={<RoleGuard allowed={['livreur']} />}>
         <Route path="/livreur" element={<LivreurDashboardPage />} />

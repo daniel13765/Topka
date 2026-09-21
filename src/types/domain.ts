@@ -37,3 +37,14 @@ export interface Product {
   negotiable?: boolean;
   badge?: string;
 }
+
+export type NotificationType = 'order' | 'promotion' | 'security' | 'info';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  relativeTime: string;
+  read: boolean;
+}
