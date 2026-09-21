@@ -35,7 +35,7 @@ export function MarketplaceHeader({ searchValue = '', onSearchChange, placeholde
         </nav>
         <div className="ml-auto flex items-center gap-2 lg:ml-3">
           <Link to="/client/notifications" className="grid h-10 w-10 place-items-center rounded-xl text-slate-600 transition hover:bg-orange-50 hover:text-brand-600" aria-label="Notifications"><Icon icon={faBell} /></Link>
-          <Link to="/client" className="relative grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-brand-700 transition hover:bg-brand-500 hover:text-white" aria-label={`Panier, ${cartCount} article${cartCount > 1 ? 's' : ''}`}><Icon icon={faCartShopping} />{cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-black text-white">{cartCount}</span>}</Link>
+          <Link to="/commande" className="relative grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-brand-700 transition hover:bg-brand-500 hover:text-white" aria-label={`Panier, ${cartCount} article${cartCount > 1 ? 's' : ''}`}><Icon icon={faCartShopping} />{cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-black text-white">{cartCount}</span>}</Link>
         </div>
       </div>
       <div className="px-5 pb-3 md:hidden">

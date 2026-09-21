@@ -30,7 +30,7 @@ const dashboardData: Record<Role, {
       { label: 'Commande active', value: '1', detail: 'en préparation' },
     ],
     actions: [
-      { title: 'Ouvrir le catalogue', description: 'Produits, filtres et recherche.', path: '/client', icon: faBasketShopping },
+      { title: 'Ouvrir le catalogue', description: 'Produits, filtres et recherche.', path: '/catalogue', icon: faBasketShopping },
       { title: 'Voir le suivi', description: 'Statut et position du livreur.', path: '/client', icon: faLocationDot },
       { title: 'Mes négociations', description: 'Propositions de budget.', path: '/client/negociations', icon: faHandshake },
       { title: 'Notifications', description: 'Commandes, promotions et sécurité.', path: '/client/notifications', icon: faBell },
@@ -63,7 +63,8 @@ const dashboardData: Record<Role, {
     actions: [
       { title: 'Commandes', description: 'Filtrer et assigner les courses.', path: '/manager', icon: faBox },
       { title: 'Statistiques de zone', description: 'Jour, semaine et mois.', path: '/manager', icon: faChartSimple },
-      { title: 'Disponibilités', description: 'Suivre les livreurs actifs.', path: '/manager', icon: faCircleCheck },
+      { title: 'Disponibilités', description: 'Suivre les livreurs actifs.', path: '/manager/equipe', icon: faCircleCheck },
+      { title: 'Mon équipe', description: 'Ajouter et affecter les livreurs.', path: '/manager/equipe', icon: faUsers },
       { title: 'Gestion des zones', description: 'Zones, tarifs et points de repère.', path: '/manager/zones', icon: faMapLocationDot },
     ],
   },
@@ -78,8 +79,9 @@ const dashboardData: Record<Role, {
     ],
     actions: [
       { title: 'Catalogue', description: 'Produits, catégories et prix.', path: '/admin', icon: faTags },
+      { title: 'Console système', description: 'Services, santé et journal admin.', path: '/admin/console', icon: faChartSimple },
       { title: 'Zones et équipes', description: 'Managers, livreurs et périmètres.', path: '/admin', icon: faUsers },
-      { title: 'Audit', description: 'Actions critiques horodatées.', path: '/admin', icon: faCircleCheck },
+      { title: 'Audit', description: 'Actions critiques horodatées.', path: '/admin/console', icon: faCircleCheck },
     ],
   },
 };

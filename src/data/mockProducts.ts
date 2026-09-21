@@ -79,7 +79,7 @@ export const mockProducts: Product[] = [
     category: 'Légumes',
     price: 450,
     unit: 'les 500 g',
-    image: '/images/brand/market-fruits.jpg',
+    image: '/images/products/tomate.jpg',
     rating: 4.5,
     market: 'Marché Dantokpa',
     seller: 'Afi Mensah',

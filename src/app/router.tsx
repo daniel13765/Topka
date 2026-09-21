@@ -9,10 +9,13 @@ import { CatalogPage } from '../pages/client/CatalogPage';
 import { ProductDetailPage } from '../pages/client/ProductDetailPage';
 import { NegotiationsPage } from '../pages/client/NegotiationsPage';
 import { NotificationsPage } from '../pages/client/NotificationsPage';
+import { OrderPage, OrderSuccessPage } from '../pages/client/OrderPage';
 import { LivreurDashboardPage } from '../pages/livreur/LivreurDashboardPage';
 import { ManagerDashboardPage } from '../pages/manager/ManagerDashboardPage';
 import { ManagerZonesPage } from '../pages/manager/ManagerZonesPage';
+import { ManagerTeamPage } from '../pages/manager/ManagerTeamPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
+import { AdminConsolePage } from '../pages/admin/AdminConsolePage';
 import { RoleGuard } from '../routes/guards/RoleGuard';
 
 export function AppRouter() {
@@ -24,6 +27,8 @@ export function AppRouter() {
       <Route path="/verification-email" element={<EmailVerificationPage />} />
       <Route path="/catalogue" element={<CatalogPage />} />
       <Route path="/produit/:productId" element={<ProductDetailPage />} />
+      <Route path="/commande" element={<OrderPage />} />
+      <Route path="/commande/succes" element={<OrderSuccessPage />} />
 
       <Route element={<RoleGuard allowed={['client']} />}>
         <Route path="/client" element={<ClientDashboardPage />} />
@@ -36,9 +41,11 @@ export function AppRouter() {
       <Route element={<RoleGuard allowed={['manager']} />}>
         <Route path="/manager" element={<ManagerDashboardPage />} />
         <Route path="/manager/zones" element={<ManagerZonesPage />} />
+        <Route path="/manager/equipe" element={<ManagerTeamPage />} />
       </Route>
       <Route element={<RoleGuard allowed={['admin']} />}>
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/console" element={<AdminConsolePage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

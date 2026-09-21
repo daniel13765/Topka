@@ -121,7 +121,7 @@ export function HomePage() {
               <Link to="/connexion" className="grid h-10 w-10 place-items-center rounded-xl text-slate-600 transition hover:bg-orange-50 hover:text-orange-700" aria-label="Mon compte">
                 <Icon icon={faUser} />
               </Link>
-              <Link to="/client" className="relative grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-700 transition hover:bg-brand-500 hover:text-white" aria-label={`Panier, ${cartCount} article${cartCount > 1 ? 's' : ''}`}>
+              <Link to="/commande" className="relative grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-700 transition hover:bg-brand-500 hover:text-white" aria-label={`Panier, ${cartCount} article${cartCount > 1 ? 's' : ''}`}>
                 <Icon icon={faCartShopping} />
                 {cartCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-black text-white">{cartCount}</span>}
               </Link>
@@ -155,7 +155,7 @@ export function HomePage() {
               </div>
             </div>
             <div className="relative min-h-[280px] overflow-hidden lg:absolute lg:inset-y-0 lg:right-0 lg:w-[58%] lg:min-h-0">
-              <img src="/images/brand/market-fruits.jpg" alt="Fruits frais sur un marché" className="h-full w-full object-cover object-center" />
+              <img src="/images/brand/tokpa-market-illustration-alt.jpg" alt="Illustration TOKPa du marché béninois" className="h-full w-full object-cover object-center" />
               <div className="absolute inset-0 bg-gradient-to-r from-orange-100 via-transparent to-transparent lg:from-orange-100/95 lg:via-orange-100/20" />
               <div className="absolute bottom-5 right-5 hidden rounded-2xl bg-white/95 p-4 shadow-xl sm:block">
                 <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><Icon icon={faCircleCheck} /></span><div><p className="text-xs text-slate-500">Producteurs locaux</p><p className="font-black text-slate-900">+ 120 partenaires</p></div></div>
@@ -185,7 +185,7 @@ export function HomePage() {
 
         <section className="mb-16 grid overflow-hidden rounded-3xl bg-slate-900 text-white lg:grid-cols-2">
           <div className="p-7 sm:p-10"><p className="eyebrow !text-orange-300">Pensé pour le Bénin</p><h2 className="mt-3 text-3xl font-black tracking-tight">Le marché vient à toi.</h2><p className="mt-4 max-w-lg leading-7 text-slate-300">Une expérience simple pour acheter, proposer ton budget et échanger avec ton livreur en temps réel.</p><div className="mt-7 flex flex-wrap gap-3"><span className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold"><Icon icon={faClock} className="mr-2 text-orange-300" />Suivi en direct</span><span className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold"><Icon icon={faHandshake} className="mr-2 text-orange-300" />Prix négociables</span></div></div>
-          <div className="relative min-h-64 overflow-hidden"><img src="/images/brand/tropical-still-life.jpg" alt="Sélection de fruits tropicaux" className="h-full w-full object-cover opacity-80" /><div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-transparent" /></div>
+          <div className="relative min-h-64 overflow-hidden"><img src="/images/brand/tokpa-market-illustration.jpg" alt="Illustration TOKPa du marché local" className="h-full w-full object-cover object-center opacity-80" /><div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-transparent to-transparent" /></div>
         </section>
 
         <section className="mb-16 grid gap-4 md:grid-cols-3">
