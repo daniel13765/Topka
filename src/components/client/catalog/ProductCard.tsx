@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { faCartPlus, faCheck, faHeart, faStar } from '@fortawesome/free-solid-svg-icons';
 import type { Product } from '../../../types/domain';
 import { useAppDispatch } from '../../../hooks/redux';
@@ -32,7 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{product.category}</p>
-        <h3 className="mt-2 min-h-12 font-bold leading-6 text-slate-900">{product.name}</h3>
+        <Link to={`/produit/${product.id}`} className="mt-2 block min-h-12 font-bold leading-6 text-slate-900 hover:text-brand-600">{product.name}</Link>
         <div className="mt-2 flex items-center gap-1 text-xs text-amber-500">
           <Icon icon={faStar} />
           <span className="font-bold">{product.rating.toFixed(1)}</span>

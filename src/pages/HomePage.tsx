@@ -180,7 +180,7 @@ export function HomePage() {
             <div className="flex gap-2"><button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:border-orange-200 hover:text-orange-700"><Icon icon={faSliders} /> Filtrer</button><button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:border-orange-200 hover:text-orange-700">Trier <Icon icon={faChevronRight} className="rotate-90 text-xs" /></button></div>
           </div>
           <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
-          <div className="mt-8 text-center"><button type="button" className="btn-secondary">Voir plus de produits <Icon icon={faArrowRight} className="ml-2" /></button></div>
+          <div className="mt-8 text-center"><Link to="/catalogue" className="btn-secondary">Voir plus de produits <Icon icon={faArrowRight} className="ml-2" /></Link></div>
         </section>
 
         <section className="mb-16 grid overflow-hidden rounded-3xl bg-slate-900 text-white lg:grid-cols-2">

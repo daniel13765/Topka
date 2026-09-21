@@ -36,6 +36,30 @@ export interface Product {
   rating: number;
   negotiable?: boolean;
   badge?: string;
+  market?: string;
+  seller?: string;
+  description?: string;
+  minOffer?: number;
+  available?: boolean;
+  origin?: string;
+  freshness?: string;
+  reviews?: number;
+}
+
+export type NegotiationStatus = 'pending' | 'countered' | 'accepted' | 'rejected';
+
+export interface Negotiation {
+  id: string;
+  productId: number;
+  productName: string;
+  productImage: string;
+  seller: string;
+  sellerPrice: number;
+  offer: number;
+  quantity: number;
+  status: NegotiationStatus;
+  sellerOffer?: number;
+  updatedAt: string;
 }
 
 export type NotificationType = 'order' | 'promotion' | 'security' | 'info';

@@ -32,7 +32,7 @@ const dashboardData: Record<Role, {
     actions: [
       { title: 'Ouvrir le catalogue', description: 'Produits, filtres et recherche.', path: '/client', icon: faBasketShopping },
       { title: 'Voir le suivi', description: 'Statut et position du livreur.', path: '/client', icon: faLocationDot },
-      { title: 'Mes négociations', description: 'Propositions de budget.', path: '/client', icon: faHandshake },
+      { title: 'Mes négociations', description: 'Propositions de budget.', path: '/client/negociations', icon: faHandshake },
       { title: 'Notifications', description: 'Commandes, promotions et sécurité.', path: '/client/notifications', icon: faBell },
     ],
   },
