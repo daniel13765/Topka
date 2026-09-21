@@ -1,5 +1,7 @@
 # Lancer TOKPa sous Windows
 
+L’archive livrée contient déjà le dossier `node_modules` afin de pouvoir démarrer rapidement sans télécharger toutes les dépendances. Node.js reste nécessaire pour exécuter Vite. Si Windows doit reconstruire une dépendance native pour votre architecture, `installer-tokpa.bat` relance `npm install`.
+
 ## Pré-requis
 
 1. Installer **Node.js LTS** depuis [nodejs.org](https://nodejs.org).
