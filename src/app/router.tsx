@@ -16,6 +16,7 @@ import { ManagerZonesPage } from '../pages/manager/ManagerZonesPage';
 import { ManagerTeamPage } from '../pages/manager/ManagerTeamPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminConsolePage } from '../pages/admin/AdminConsolePage';
+import { AdminCatalogPage } from '../pages/admin/AdminCatalogPage';
 import { RoleGuard } from '../routes/guards/RoleGuard';
 
 export function AppRouter() {
@@ -45,6 +46,7 @@ export function AppRouter() {
       </Route>
       <Route element={<RoleGuard allowed={['admin']} />}>
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/catalogue" element={<AdminCatalogPage />} />
         <Route path="/admin/console" element={<AdminConsolePage />} />
       </Route>
 

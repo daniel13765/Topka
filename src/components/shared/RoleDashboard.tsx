@@ -78,7 +78,7 @@ const dashboardData: Record<Role, {
       { label: 'Propositions à valider', value: '17', detail: '5 urgentes' },
     ],
     actions: [
-      { title: 'Catalogue', description: 'Produits, catégories et prix.', path: '/admin', icon: faTags },
+      { title: 'Catalogue & packs', description: 'Produits, références et packs autonomes.', path: '/admin/catalogue', icon: faTags },
       { title: 'Console système', description: 'Services, santé et journal admin.', path: '/admin/console', icon: faChartSimple },
       { title: 'Zones et équipes', description: 'Managers, livreurs et périmètres.', path: '/admin', icon: faUsers },
       { title: 'Audit', description: 'Actions critiques horodatées.', path: '/admin/console', icon: faCircleCheck },

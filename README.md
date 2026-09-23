@@ -49,6 +49,7 @@ npm run build
 - `/manager/equipe` : équipe, ajout de livreur et attribution de course
 - `/manager/zones` : gestion des zones, tarifs et points de repère
 - `/admin` : espace administrateur
+- `/admin/catalogue` : administration des produits et packs autonomes
 - `/admin/console` : santé des services, trafic API et journal admin
 
 Les espaces protégés utilisent la connexion de démonstration et les rôles `client`, `livreur`, `manager` et `admin`.
