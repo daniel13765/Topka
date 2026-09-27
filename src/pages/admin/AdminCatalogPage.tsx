@@ -1,190 +1,349 @@
-import { useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  faArchive,
-  faArrowRight,
-  faBoxOpen,
-  faBoxesStacked,
-  faCheck,
-  faChevronDown,
-  faCircle,
-  faCloudArrowUp,
-  faDollarSign,
-  faEdit,
-  faFileCirclePlus,
-  faFilter,
-  faGear,
-  faGlobe,
-  faHeartPulse,
-  faHouse,
-  faImage,
-  faMagnifyingGlass,
-  faPen,
-  faPlus,
-  faRotateLeft,
-  faSliders,
-  faTags,
-  faTrashCan,
-  faTriangleExclamation,
-  faUsers,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-import { Icon } from '../../components/ui/Icon';
-import { formatFCFA } from '../../utils/formatFCFA';
-import {
-  useArchiveCatalogPackMutation,
-  useArchiveCatalogProductMutation,
-  useCreateCatalogPackMutation,
-  useCreateCatalogProductMutation,
-  useListCatalogAdminQuery,
-  useUpdateCatalogPackMutation,
-  useUpdateCatalogProductMutation,
-} from '../../services/api/catalogAdminApi';
-import type { AdminCatalogProduct, AdminItemStatus, StandalonePack } from '../../types/catalogAdmin';
-import type { PackFormPayload, ProductFormPayload } from '../../services/api/catalogAdminApi';
+import { useRef, useState, useEffect } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useDesignScript } from '../../utils/designRuntime';
+import { adminApi } from '../../services/api';
+import { useLiveRows } from '../../services/api/useLiveRows';
+import { unwrap, listOf, fmtFcfa } from '../../services/api/unwrap';
+import { absImageUrl } from '../../utils/imageUrl';
+import { extractApiError, formatApiError } from '../../utils/apiError';
+import DESIGN_SCRIPT from './_scripts/AdminCatalogPage';
+import AdminLayout from '../../components/layout/admin/AdminLayout';
+import MIcon from '../../components/shared/MIcon';
+import { useLanguage } from '../../context/LanguageContext';
+import { tr, tx } from '../../i18n/tx';
 
-const categories = ['Fruits & légumes', 'Légumes', 'Céréales & graines', 'Épices & condiments', 'Packs repas', 'Packs cuisine', 'Sélection TOKPa'];
-const markets = ['Marché Dantokpa', 'Marché Ganhì', 'Marché Missebo', 'Marché Gbégamey', 'TOKPa Sélection'];
 
-type CatalogTab = 'products' | 'packs';
-type StatusFilter = 'all' | AdminItemStatus;
+const DESIGN_CSS = `
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .sidebar-item-active { @apply bg-secondary-container text-on-secondary-container rounded-lg font-bold; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e0c0b1; border-radius: 10px; }
+    `;
 
-const blankProduct: ProductFormPayload = {
-  name: '',
-  category: 'Légumes',
-  price: 0,
-  unit: 'les 500 g',
-  image: '/images/brand/market-fruits.jpg',
-  rating: 4.5,
-  negotiable: true,
-  badge: '',
-  market: 'Marché Dantokpa',
-  seller: 'TOKPa Sélection',
-  description: '',
-  minOffer: 0,
-  available: true,
-  origin: 'Bénin',
-  freshness: 'Récolte du jour',
-  reviews: 0,
-  sku: '',
-  stock: 0,
-  status: 'draft',
-};
+/**
+ * AdminCatalogPage — copie conforme statique du design Stitch (code.html).
+ * Interactions : script du design exécuté via useDesignScript (comportement copié).
+ */
+const PER_PAGE = 8;
 
-const blankPack: PackFormPayload = {
-  name: '',
-  sku: '',
-  category: 'Packs repas',
-  price: 0,
-  compareAtPrice: 0,
-  stock: 0,
-  status: 'draft',
-  image: '/images/brand/tropical-still-life.jpg',
-  description: '',
-  unit: 'le pack',
-};
-
-const statusLabel: Record<AdminItemStatus, string> = {
-  active: 'Actif',
-  draft: 'Brouillon',
-  archived: 'Archivé',
-};
-
-const statusClass: Record<AdminItemStatus, string> = {
-  active: 'bg-emerald-50 text-emerald-700',
-  draft: 'bg-amber-50 text-amber-700',
-  archived: 'bg-slate-100 text-slate-500',
-};
-
-function AdminSideBar() {
-  const items = [
-    { id: 'dashboard', label: 'Vue globale', to: '/admin', icon: faHouse },
-    { id: 'console', label: 'Console système', to: '/admin/console', icon: faHeartPulse },
-    { id: 'catalog', label: 'Catalogue & packs', to: '/admin/catalogue', icon: faTags },
-    { id: 'users', label: 'Utilisateurs', to: '/admin', icon: faUsers },
-    { id: 'orders', label: 'Commandes', to: '/admin', icon: faBoxOpen },
-    { id: 'zones', label: 'Zones & équipes', to: '/manager/zones', icon: faGlobe },
-  ];
-  return <aside className="flex h-full w-[270px] flex-col bg-[#111727] p-5 text-white"><Link to="/" className="px-4 pt-3 text-2xl font-black tracking-tight">TOK<span className="text-orange-500">Pa</span></Link><div className="mt-2 px-4 text-xs text-slate-500">Administration centrale</div><nav className="mt-10 space-y-1" aria-label="Navigation administrateur"><p className="mb-3 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Pilotage</p>{items.map((item) => <Link key={item.id} to={item.to} className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${item.id === 'catalog' ? 'bg-orange-600 text-white shadow-lg shadow-orange-950/30' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}><Icon icon={item.icon} className="w-4" />{item.label}</Link>)}</nav><div className="mt-auto border-t border-white/10 pt-5"><Link to="/admin/console" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-slate-400 hover:bg-white/10 hover:text-white"><Icon icon={faGear} /> Paramètres</Link><div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-violet-500 font-black">AD</span><div className="min-w-0"><p className="truncate text-sm font-bold">Admin TOKPa</p><p className="text-xs text-slate-400">Administrateur</p></div></div></div></aside>;
-}
-
-function StatusBadge({ status }: { status: AdminItemStatus }) {
-  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${statusClass[status]}`}><Icon icon={faCircle} className="text-[6px]" /> {statusLabel[status]}</span>;
-}
-
-function SelectChevron() {
-  return <Icon icon={faChevronDown} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" />;
-}
-
-function ProductModal({ product, form, setForm, onClose, onSubmit, isSaving }: { product: AdminCatalogProduct | null; form: ProductFormPayload; setForm: (value: ProductFormPayload) => void; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; isSaving: boolean }) {
-  return <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/70 px-5 py-8"><form onSubmit={onSubmit} className="motion-enter max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Administration du catalogue</p><h2 className="mt-2 text-2xl font-black">{product ? 'Modifier le produit' : 'Nouveau produit'}</h2><p className="mt-2 text-sm leading-6 text-slate-500">Gérez les informations affichées sur le marché TOKPa.</p></div><button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Fermer"><Icon icon={faXmark} /></button></div><div className="mt-7 grid gap-5 sm:grid-cols-2"><label className="field-label sm:col-span-2">Nom du produit<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="field-input" placeholder="Ex. Tomates fraîches locales" autoFocus /></label><label className="field-label">Référence SKU<input required value={form.sku} onChange={(event) => setForm({ ...form, sku: event.target.value.toUpperCase() })} className="field-input" placeholder="TOK-0014" /></label><label className="field-label">Catégorie<div className="relative"><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="field-input appearance-none pr-9">{categories.map((category) => <option key={category}>{category}</option>)}</select><SelectChevron /></div></label><label className="field-label">Prix de vente (FCFA)<input required min="0" type="number" value={form.price} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} className="field-input" /></label><label className="field-label">Stock disponible<input required min="0" type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} className="field-input" /></label><label className="field-label">Unité de vente<input required value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} className="field-input" placeholder="les 500 g" /></label><label className="field-label">Statut<div className="relative"><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as AdminItemStatus })} className="field-input appearance-none pr-9"><option value="active">Actif</option><option value="draft">Brouillon</option><option value="archived">Archivé</option></select><SelectChevron /></div></label><label className="field-label">Marché d’origine<div className="relative"><select value={form.market} onChange={(event) => setForm({ ...form, market: event.target.value })} className="field-input appearance-none pr-9">{markets.map((market) => <option key={market}>{market}</option>)}</select><SelectChevron /></div></label><label className="field-label">Vendeur / fournisseur<input value={form.seller} onChange={(event) => setForm({ ...form, seller: event.target.value })} className="field-input" /></label><label className="field-label sm:col-span-2">URL ou chemin de l’image<div className="relative"><Icon icon={faImage} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} className="field-input pl-10" placeholder="/images/products/produit.jpg" /></div></label><label className="field-label sm:col-span-2">Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="field-input min-h-28 resize-y" placeholder="Décrivez le produit, son origine et sa fraîcheur…" /></label><div className="flex flex-wrap gap-5 sm:col-span-2"><label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={form.negotiable} onChange={(event) => setForm({ ...form, negotiable: event.target.checked })} className="h-5 w-5 accent-orange-500" /> Prix négociable</label><label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={form.available} onChange={(event) => setForm({ ...form, available: event.target.checked })} className="h-5 w-5 accent-orange-500" /> Visible sur le marché</label></div></div><div className="mt-8 flex flex-col-reverse justify-end gap-3 sm:flex-row"><button type="button" onClick={onClose} className="btn-secondary !bg-white">Annuler</button><button type="submit" disabled={isSaving} className="btn-primary"><Icon icon={faCloudArrowUp} className="mr-2" />{isSaving ? 'Enregistrement…' : product ? 'Enregistrer les modifications' : 'Créer le produit'}</button></div></form></div>;
-}
-
-function PackModal({ pack, form, setForm, onClose, onSubmit, isSaving }: { pack: StandalonePack | null; form: PackFormPayload; setForm: (value: PackFormPayload) => void; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; isSaving: boolean }) {
-  return <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/70 px-5 py-8"><form onSubmit={onSubmit} className="motion-enter max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Packs autonomes</p><h2 className="mt-2 text-2xl font-black">{pack ? 'Modifier le pack' : 'Nouveau pack'}</h2><p className="mt-2 text-sm leading-6 text-slate-500">Un pack est vendu comme une référence autonome du catalogue, avec son propre stock et son propre prix.</p></div><button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Fermer"><Icon icon={faXmark} /></button></div><div className="mt-7 grid gap-5 sm:grid-cols-2"><label className="field-label sm:col-span-2">Nom du pack<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="field-input" placeholder="Ex. Pack rentrée du marché" autoFocus /></label><label className="field-label">Référence SKU<input required value={form.sku} onChange={(event) => setForm({ ...form, sku: event.target.value.toUpperCase() })} className="field-input" placeholder="PACK-0104" /></label><label className="field-label">Catégorie<div className="relative"><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="field-input appearance-none pr-9">{categories.filter((category) => category.startsWith('Pack') || category === 'Sélection TOKPa').map((category) => <option key={category}>{category}</option>)}</select><SelectChevron /></div></label><label className="field-label">Prix du pack (FCFA)<input required min="0" type="number" value={form.price} onChange={(event) => setForm({ ...form, price: Number(event.target.value) })} className="field-input" /></label><label className="field-label">Prix de référence<input min="0" type="number" value={form.compareAtPrice} onChange={(event) => setForm({ ...form, compareAtPrice: Number(event.target.value) })} className="field-input" /></label><label className="field-label">Stock disponible<input required min="0" type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: Number(event.target.value) })} className="field-input" /></label><label className="field-label">Statut<div className="relative"><select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as AdminItemStatus })} className="field-input appearance-none pr-9"><option value="active">Actif</option><option value="draft">Brouillon</option><option value="archived">Archivé</option></select><SelectChevron /></div></label><label className="field-label">Unité de vente<input required value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value })} className="field-input" /></label><label className="field-label sm:col-span-2">URL ou chemin de l’image<div className="relative"><Icon icon={faImage} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} className="field-input pl-10" placeholder="/images/packs/pack.jpg" /></div></label><label className="field-label sm:col-span-2">Description du pack<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="field-input min-h-32 resize-y" placeholder="Présentez l’offre, le public cible et les conditions de vente…" /></label></div><div className="mt-8 flex flex-col-reverse justify-end gap-3 sm:flex-row"><button type="button" onClick={onClose} className="btn-secondary !bg-white">Annuler</button><button type="submit" disabled={isSaving} className="btn-primary"><Icon icon={faCloudArrowUp} className="mr-2" />{isSaving ? 'Enregistrement…' : pack ? 'Enregistrer les modifications' : 'Créer le pack'}</button></div></form></div>;
-}
-
-export function AdminCatalogPage() {
-  const { data, isLoading } = useListCatalogAdminQuery();
-  const [tab, setTab] = useState<CatalogTab>('products');
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
-  const [category, setCategory] = useState('Toutes les catégories');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<AdminCatalogProduct | null>(null);
-  const [editingPack, setEditingPack] = useState<StandalonePack | null>(null);
-  const [productForm, setProductForm] = useState<ProductFormPayload>(blankProduct);
-  const [packForm, setPackForm] = useState<PackFormPayload>(blankPack);
-  const [message, setMessage] = useState('');
-  const [createProduct, createProductState] = useCreateCatalogProductMutation();
-  const [updateProduct, updateProductState] = useUpdateCatalogProductMutation();
-  const [archiveProduct] = useArchiveCatalogProductMutation();
-  const [createPack, createPackState] = useCreateCatalogPackMutation();
-  const [updatePack, updatePackState] = useUpdateCatalogPackMutation();
-  const [archivePack] = useArchiveCatalogPackMutation();
-
-  const products = data?.products ?? [];
-  const packs = data?.packs ?? [];
-  const filteredProducts = useMemo(() => products.filter((product) => (status === 'all' || product.status === status) && (category === 'Toutes les catégories' || product.category === category) && `${product.name} ${product.sku} ${product.seller || ''}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())), [category, products, search, status]);
-  const filteredPacks = useMemo(() => packs.filter((pack) => (status === 'all' || pack.status === status) && (category === 'Toutes les catégories' || pack.category === category) && `${pack.name} ${pack.sku}`.toLocaleLowerCase().includes(search.toLocaleLowerCase())), [category, packs, search, status]);
-  const activeProducts = products.filter((product) => product.status === 'active').length;
-  const activePacks = packs.filter((pack) => pack.status === 'active').length;
-  const lowStock = [...products, ...packs].filter((item) => item.status !== 'archived' && item.stock <= 10).length;
-  const catalogValue = [...products, ...packs].filter((item) => item.status === 'active').reduce((sum, item) => sum + item.price * item.stock, 0);
-  const isSaving = createProductState.isLoading || updateProductState.isLoading || createPackState.isLoading || updatePackState.isLoading;
-
-  const announce = (text: string) => { setMessage(text); window.setTimeout(() => setMessage(''), 3200); };
-  const closeModal = () => { setIsModalOpen(false); setEditingProduct(null); setEditingPack(null); };
-  const openNew = () => { setEditingProduct(null); setEditingPack(null); setProductForm({ ...blankProduct, sku: `TOK-${String(Date.now()).slice(-4)}` }); setPackForm({ ...blankPack, sku: `PACK-${String(Date.now()).slice(-4)}` }); setIsModalOpen(true); };
-  const openProduct = (product: AdminCatalogProduct) => { const { id: _id, updatedAt: _updatedAt, ...form } = product; setEditingProduct(product); setEditingPack(null); setProductForm(form); setIsModalOpen(true); };
-  const openPack = (pack: StandalonePack) => { const { id: _id, updatedAt: _updatedAt, ...form } = pack; setEditingPack(pack); setEditingProduct(null); setPackForm(form); setIsModalOpen(true); };
-
-  const submitProduct = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const payload = { ...productForm, name: productForm.name.trim(), sku: productForm.sku.trim() || `TOK-${Date.now()}`, price: Number(productForm.price), stock: Number(productForm.stock), available: productForm.status === 'active' && productForm.available };
-    try {
-      if (editingProduct) await updateProduct({ id: editingProduct.id, changes: payload }).unwrap();
-      else await createProduct(payload).unwrap();
-      closeModal();
-      announce(editingProduct ? 'Le produit a été mis à jour.' : 'Le produit a été créé.');
-    } catch { announce('Impossible d’enregistrer ce produit.'); }
+export default function AdminCatalogPage() {
+  useLanguage();
+  useDesignScript(DESIGN_SCRIPT);
+  // Tous les produits (100 par page, au plus 10 pages) : filtres et pagination portent sur le catalogue entier
+  const { rows: produits, err, loading, reload } = useLiveRows(async () => {
+    const acc: any[] = [];
+    for (let page = 1; page <= 10; page++) {
+      const res: any = await adminApi.getProducts({ per_page: 100, page });
+      acc.push(...listOf(res));
+      if (page >= Number(res?.meta?.last_page ?? 1)) break;
+    }
+    return { data: acc };
+  });
+  const [cats, setCats] = useState<any[]>([]);
+  const [packs, setPacks] = useState<any[]>([]);
+  const [tab, setTab] = useState<'produits' | 'categories' | 'packs'>('produits');
+  const [q, setQ] = useState('');
+  const [catF, setCatF] = useState('');
+  const [dispoF, setDispoF] = useState('');
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [tab, q, catF, dispoF]); // nouveau filtre → première page
+  const [edition, setEdition] = useState<any | null>(null);
+  const [form, setForm] = useState({ nom: '', description: '', prix: '', prix_minimum: '', stock: '', categorie_id: '' });
+  // Mode « pack » de la MÊME modale (POST/PUT /admin/bundles) : champs du modèle Pack + produits inclus.
+  const [mode, setMode] = useState<'produit' | 'pack'>('produit');
+  const [packForm, setPackForm] = useState<{
+    nom: string;
+    description: string;
+    prix_total: string;
+    prix_minimum: string;
+    disponible: boolean;
+    items: { id: string; qte: string }[];
+  }>({ nom: '', description: '', prix_total: '', prix_minimum: '', disponible: true, items: [] });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  const revokeObjectUrl = () => {
+    if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null; }
   };
-
-  const submitPack = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const payload = { ...packForm, name: packForm.name.trim(), sku: packForm.sku.trim() || `PACK-${Date.now()}`, price: Number(packForm.price), compareAtPrice: Number(packForm.compareAtPrice), stock: Number(packForm.stock) };
-    try {
-      if (editingPack) await updatePack({ id: editingPack.id, changes: payload }).unwrap();
-      else await createPack(payload).unwrap();
-      closeModal();
-      announce(editingPack ? 'Le pack a été mis à jour.' : 'Le pack autonome a été créé.');
-    } catch { announce('Impossible d’enregistrer ce pack.'); }
+  const pickImage = (f?: File | null) => {
+    if (!f) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) {
+      window.alert('Format non pris en charge : PNG, JPG ou WEBP uniquement.');
+      return;
+    }
+    if (f.size > 4 * 1024 * 1024) {
+      window.alert('Image trop lourde : maximum 4 Mo.');
+      return;
+    }
+    revokeObjectUrl();
+    objectUrlRef.current = URL.createObjectURL(f);
+    setImageFile(f);
+    setImagePreview(objectUrlRef.current);
   };
+  const clearImage = () => {
+    revokeObjectUrl();
+    setImageFile(null);
+    setImagePreview(absImageUrl(edition?.image_url ?? edition?.img_url));
+  };
+  const loadCats = () => adminApi.getCategories().then((r: any) => setCats(listOf(unwrap(r)))).catch(() => setCats([]));
+  const loadPacks = () => adminApi.getBundles().then((r: any) => setPacks(listOf(unwrap(r)))).catch(() => setPacks([]));
+  useState(() => {
+    loadCats();
+    loadPacks();
+    return null;
+  });
+  const ouvrir = (pr: any) => {
+    revokeObjectUrl();
+    setMode('produit');
+    setEdition(pr ?? {});
+    setImageFile(null);
+    setImagePreview(absImageUrl(pr?.image_url ?? pr?.img_url));
+    setForm({ nom: pr?.nom ?? '', description: pr?.description ?? '', prix: String(pr?.prix ?? ''), prix_minimum: String(pr?.prix_minimum ?? ''), stock: String(pr?.stock ?? ''), categorie_id: String(pr?.categorie?.id ?? '') });
+  };
+  const fermer = () => { revokeObjectUrl(); setImageFile(null); setEdition(null); };
+  const enregistrer = async () => {
+    try {
+      const champs = { nom: form.nom, description: form.description, prix: Number(form.prix), prix_minimum: Number(form.prix_minimum), stock: Number(form.stock), categorie_id: Number(form.categorie_id) };
+      if (imageFile) {
+        // Multipart uniquement si fichier : champs en string (validations Laravel OK) + image.
+        const fd = new FormData();
+        Object.entries(champs).forEach(([k, v]) => fd.append(k, String(v)));
+        fd.append('image', imageFile);
+        if (edition?.id) await adminApi.updateProduct(edition.id, fd);
+        else await adminApi.createProduct(fd);
+      } else if (edition?.id) await adminApi.updateProduct(edition.id, champs);
+      else await adminApi.createProduct(champs);
+      fermer(); reload();
+    } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  /* ---- Packs (F-08) : même modale en mode « pack » ---- */
+  const ouvrirPack = (b: any) => {
+    revokeObjectUrl();
+    setMode('pack');
+    setEdition(b ?? {});
+    const inclus: any[] = b?.produits ?? b?.products ?? [];
+    setPackForm({
+      nom: b?.nom ?? '',
+      description: b?.description ?? '',
+      prix_total: b?.prix_total != null ? String(Number(b.prix_total)) : '',
+      prix_minimum: b?.prix_minimum != null ? String(Number(b.prix_minimum)) : '',
+      disponible: b?.disponible !== false,
+      items: inclus.map((p: any) => ({ id: String(p.id), qte: String(p.pivot?.qte ?? 1) })),
+    });
+  };
+  const enregistrerPack = async () => {
+    if (!packForm.nom.trim()) { window.alert('Le nom du pack est obligatoire.'); return; }
+    if (packForm.prix_total.trim() === '' || !Number.isFinite(Number(packForm.prix_total))) { window.alert('Le prix total est obligatoire.'); return; }
+    // Produits inclus : lignes complètes seulement ; doublons fusionnés (le backend synchronise par id)
+    const qtes = new Map<number, number>();
+    packForm.items.forEach((it) => {
+      const id = Number(it.id);
+      if (!id) return;
+      qtes.set(id, (qtes.get(id) ?? 0) + Math.max(1, Math.floor(Number(it.qte) || 1)));
+    });
+    const payload = {
+      nom: packForm.nom.trim(),
+      description: packForm.description.trim() || null,
+      prix_total: Number(packForm.prix_total),
+      prix_minimum: packForm.prix_minimum.trim() === '' ? null : Number(packForm.prix_minimum),
+      disponible: packForm.disponible,
+      products: [...qtes].map(([id, qte]) => ({ id, qte })),
+    };
+    try {
+      if (edition?.id) await adminApi.updateBundle(edition.id, payload);
+      else await adminApi.createBundle(payload);
+      fermer(); loadPacks();
+    } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  const supprimer = async (id: number) => {
+    try { await adminApi.deleteProduct(id); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  const supprimerCat = async (c: any) => {
+    if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
+    try { await adminApi.deleteCategory(c.id); loadCats(); reload(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  const supprimerPack = async (b: any) => {
+    if (!window.confirm(tr(`Supprimer le pack « ${b.nom} » ?`, `Delete pack “${b.nom}”?`))) return;
+    try { await adminApi.deleteBundle(b.id); loadPacks(); } catch (e: any) { window.alert(formatApiError(extractApiError(e))); }
+  };
+  const qMin = q.trim().toLowerCase();
+  const produitsF = produits.filter((p: any) => {
+    const hit = !qMin || String(p.nom ?? '').toLowerCase().includes(qMin) || String(p.id).includes(qMin);
+    const cok = !catF || String(p.categorie?.id ?? p.categorie_id ?? '') === catF;
+    const dispo = p.disponible !== false && Number(p.stock) > 0;
+    const dok = !dispoF || (dispoF === 'stock' ? dispo : !dispo);
+    return hit && cok && dok;
+  });
+  const catsF = cats.filter((c: any) => !qMin || String(c.nom ?? '').toLowerCase().includes(qMin) || String(c.id).includes(qMin));
+  const packsF = packs.filter((b: any) => {
+    const hit = !qMin || String(b.nom ?? '').toLowerCase().includes(qMin) || String(b.id).includes(qMin);
+    const dok = !dispoF || (dispoF === 'stock' ? b.disponible !== false : b.disponible === false);
+    return hit && dok;
+  });
+  // Pagination réelle (8 lignes, comme la maquette), sur l'onglet affiché
+  const tabList: any[] = tab === 'produits' ? produitsF : tab === 'categories' ? catsF : packsF;
+  const tabNoun = tab === 'produits' ? 'produits' : tab === 'categories' ? tx("catégories") : 'packs';
+  const pages = Math.max(1, Math.ceil(tabList.length / PER_PAGE));
+  const current = Math.min(page, pages);
+  const slicePage = (l: any[]) => l.slice((current - 1) * PER_PAGE, current * PER_PAGE);
 
-  const toggleProduct = async (product: AdminCatalogProduct) => { try { await archiveProduct({ id: product.id, status: product.status === 'archived' ? 'active' : 'archived' }).unwrap(); announce(product.status === 'archived' ? 'Le produit est de nouveau actif.' : 'Le produit a été archivé.'); } catch { announce('Impossible de modifier le statut du produit.'); } };
-  const togglePack = async (pack: StandalonePack) => { try { await archivePack({ id: pack.id, status: pack.status === 'archived' ? 'active' : 'archived' }).unwrap(); announce(pack.status === 'archived' ? 'Le pack est de nouveau actif.' : 'Le pack a été archivé.'); } catch { announce('Impossible de modifier le statut du pack.'); } };
-  const resetFilters = () => { setSearch(''); setStatus('all'); setCategory('Toutes les catégories'); };
-
-  return <div className="min-h-screen bg-[#f7f8fb] text-slate-900"><div className="fixed inset-y-0 left-0 z-40 hidden lg:block"><AdminSideBar /></div><div className="min-h-screen lg:pl-[270px]"><header className="border-b border-slate-200 bg-white px-5 py-5 sm:px-8"><div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4"><div><p className="eyebrow">Administration centrale</p><h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Catalogue & packs</h1></div><div className="flex items-center gap-2 sm:gap-3"><span className="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 sm:inline-flex"><Icon icon={faCircle} className="text-[7px]" /> Données synchronisées</span><Link to="/admin/console" className="grid h-10 w-10 place-items-center rounded-xl text-slate-500 hover:bg-orange-50 hover:text-brand-600" aria-label="Ouvrir la console"><Icon icon={faHeartPulse} /></Link><span className="grid h-10 w-10 place-items-center rounded-full bg-violet-500 text-xs font-black text-white">AD</span></div></div></header><main className="mx-auto max-w-[1320px] px-5 py-7 sm:px-8"><section className="flex flex-col justify-between gap-5 rounded-3xl bg-[#111727] p-6 text-white shadow-xl shadow-slate-200 sm:flex-row sm:items-end sm:p-8"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Gestion marchande</p><h2 className="mt-3 text-2xl font-black sm:text-3xl">Gardez le marché frais et lisible.</h2><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Pilotez les produits visibles par les clients et créez des packs autonomes avec leur propre prix, image et stock.</p></div><button type="button" onClick={openNew} className="inline-flex shrink-0 items-center justify-center rounded-xl bg-orange-500 px-4 py-3 text-sm font-black text-white transition hover:bg-orange-400"><Icon icon={faPlus} className="mr-2" />{tab === 'products' ? 'Nouveau produit' : 'Nouveau pack'}</button></section><section className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">Produits actifs</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-50 text-orange-600"><Icon icon={faTags} /></span></div><p className="mt-4 text-2xl font-black">{activeProducts}</p><p className="mt-2 text-xs font-bold text-emerald-600">Sur {products.length} références</p></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">Packs autonomes</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><Icon icon={faBoxesStacked} /></span></div><p className="mt-4 text-2xl font-black">{activePacks}</p><p className="mt-2 text-xs font-bold text-violet-600">{packs.length} packs configurés</p></div><div className="rounded-2xl border border-amber-100 bg-amber-50 p-5"><div className="flex items-center justify-between"><p className="text-sm text-amber-700">Stocks à surveiller</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-white/80 text-amber-600"><Icon icon={faTriangleExclamation} /></span></div><p className="mt-4 text-2xl font-black text-amber-950">{lowStock}</p><p className="mt-2 text-xs font-bold text-amber-700">10 unités ou moins</p></div><div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5"><div className="flex items-center justify-between"><p className="text-sm text-emerald-700">Valeur du stock actif</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-white/80 text-emerald-600"><Icon icon={faDollarSign} /></span></div><p className="mt-4 text-2xl font-black text-emerald-950">{formatFCFA(catalogValue)}</p><p className="mt-2 text-xs font-bold text-emerald-700">Prix catalogue × stock</p></div></section><section className="mt-8 rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-col justify-between gap-4 border-b border-slate-100 px-5 pt-5 sm:flex-row sm:items-end sm:px-7"><div className="flex gap-6"><button type="button" onClick={() => { setTab('products'); resetFilters(); }} className={`border-b-2 pb-4 text-sm font-black ${tab === 'products' ? 'border-orange-500 text-slate-900' : 'border-transparent text-slate-400'}`}><Icon icon={faTags} className="mr-2" />Produits <span className="ml-1 text-xs text-slate-400">{products.length}</span></button><button type="button" onClick={() => { setTab('packs'); resetFilters(); }} className={`border-b-2 pb-4 text-sm font-black ${tab === 'packs' ? 'border-orange-500 text-slate-900' : 'border-transparent text-slate-400'}`}><Icon icon={faBoxesStacked} className="mr-2" />Packs autonomes <span className="ml-1 text-xs text-slate-400">{packs.length}</span></button></div><button type="button" onClick={openNew} className="mb-3 inline-flex items-center gap-2 self-start rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 hover:bg-orange-100 sm:self-auto"><Icon icon={faFileCirclePlus} /> Ajouter une référence</button></div><div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:p-7"><label className="relative min-w-0 flex-1"><span className="sr-only">Rechercher dans le catalogue</span><Icon icon={faMagnifyingGlass} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={tab === 'products' ? 'Rechercher un produit, SKU ou vendeur…' : 'Rechercher un pack ou son SKU…'} className="w-full rounded-xl bg-slate-50 py-3 pl-10 pr-3 text-sm outline-none focus:ring-4 focus:ring-orange-100" /></label><div className="relative"><select value={category} onChange={(event) => setCategory(event.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-3 pr-9 text-sm font-semibold text-slate-600 outline-none sm:w-56"><option>Toutes les catégories</option>{[...new Set((tab === 'products' ? products : packs).map((item) => item.category))].map((item) => <option key={item}>{item}</option>)}</select><SelectChevron /></div><div className="relative"><select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)} className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-3 pl-3 pr-9 text-sm font-semibold text-slate-600 outline-none sm:w-40"><option value="all">Tous les statuts</option><option value="active">Actifs</option><option value="draft">Brouillons</option><option value="archived">Archivés</option></select><SelectChevron /></div><button type="button" onClick={resetFilters} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-400 hover:bg-orange-50 hover:text-brand-600" aria-label="Réinitialiser les filtres"><Icon icon={faRotateLeft} /></button></div>{isLoading ? <div className="grid gap-3 p-7">{[1, 2, 3, 4].map((item) => <div key={item} className="h-16 animate-pulse rounded-xl bg-slate-100" />)}</div> : tab === 'products' ? <div className="overflow-x-auto"><table className="w-full min-w-[920px] text-left text-sm"><thead className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase tracking-wider text-slate-400"><tr><th className="px-7 py-4 font-bold">Référence</th><th className="py-4 font-bold">Catégorie</th><th className="py-4 font-bold">Prix</th><th className="py-4 font-bold">Stock</th><th className="py-4 font-bold">Statut</th><th className="py-4 font-bold">Mise à jour</th><th className="px-7 py-4 text-right font-bold">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredProducts.map((product) => <tr key={product.id} className="transition hover:bg-orange-50/40"><td className="px-7 py-4"><div className="flex items-center gap-3"><img src={product.image} alt="" className="h-12 w-14 rounded-xl bg-orange-50 object-cover" /><div><p className="font-black text-slate-800">{product.name}</p><p className="mt-1 font-mono text-[11px] text-slate-400">{product.sku} · {product.seller}</p></div></div></td><td className="py-4 text-slate-500">{product.category}</td><td className="py-4 font-black text-slate-800">{formatFCFA(product.price)}<span className="block text-[11px] font-normal text-slate-400">{product.unit}</span></td><td className="py-4"><span className={`font-black ${product.stock <= 10 ? 'text-amber-600' : 'text-slate-800'}`}>{product.stock}</span><span className="ml-1 text-xs text-slate-400">unités</span></td><td className="py-4"><StatusBadge status={product.status} /></td><td className="py-4 text-xs text-slate-400">{product.updatedAt}</td><td className="px-7 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => openProduct(product)} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-orange-50 hover:text-brand-600" aria-label={`Modifier ${product.name}`}><Icon icon={faPen} size="sm" /></button><button type="button" onClick={() => void toggleProduct(product)} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`${product.status === 'archived' ? 'Réactiver' : 'Archiver'} ${product.name}`}><Icon icon={product.status === 'archived' ? faRotateLeft : faArchive} size="sm" /></button></div></td></tr>)}{filteredProducts.length === 0 && <tr><td colSpan={7} className="px-7 py-14 text-center text-slate-500">Aucun produit ne correspond aux filtres.</td></tr>}</tbody></table></div> : <div className="overflow-x-auto"><table className="w-full min-w-[920px] text-left text-sm"><thead className="border-b border-slate-100 bg-slate-50/70 text-xs uppercase tracking-wider text-slate-400"><tr><th className="px-7 py-4 font-bold">Pack</th><th className="py-4 font-bold">Catégorie</th><th className="py-4 font-bold">Prix</th><th className="py-4 font-bold">Stock</th><th className="py-4 font-bold">Statut</th><th className="py-4 font-bold">Mise à jour</th><th className="px-7 py-4 text-right font-bold">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredPacks.map((pack) => <tr key={pack.id} className="transition hover:bg-orange-50/40"><td className="px-7 py-4"><div className="flex items-center gap-3"><img src={pack.image} alt="" className="h-12 w-14 rounded-xl bg-orange-50 object-cover" /><div><p className="font-black text-slate-800">{pack.name}</p><p className="mt-1 font-mono text-[11px] text-slate-400">{pack.sku} · {pack.unit}</p></div></div></td><td className="py-4 text-slate-500">{pack.category}</td><td className="py-4 font-black text-slate-800">{formatFCFA(pack.price)}<span className="block text-[11px] font-normal text-slate-400">réf. {formatFCFA(pack.compareAtPrice)}</span></td><td className="py-4"><span className={`font-black ${pack.stock <= 10 ? 'text-amber-600' : 'text-slate-800'}`}>{pack.stock}</span><span className="ml-1 text-xs text-slate-400">packs</span></td><td className="py-4"><StatusBadge status={pack.status} /></td><td className="py-4 text-xs text-slate-400">{pack.updatedAt}</td><td className="px-7 py-4"><div className="flex justify-end gap-2"><button type="button" onClick={() => openPack(pack)} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-orange-50 hover:text-brand-600" aria-label={`Modifier ${pack.name}`}><Icon icon={faPen} size="sm" /></button><button type="button" onClick={() => void togglePack(pack)} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label={`${pack.status === 'archived' ? 'Réactiver' : 'Archiver'} ${pack.name}`}><Icon icon={pack.status === 'archived' ? faRotateLeft : faArchive} size="sm" /></button></div></td></tr>)}{filteredPacks.length === 0 && <tr><td colSpan={7} className="px-7 py-14 text-center text-slate-500">Aucun pack ne correspond aux filtres.</td></tr>}</tbody></table></div>}</section><section className="mt-7 grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-slate-200 bg-white p-5"><Icon icon={faFileCirclePlus} className="text-xl text-orange-600" /><h2 className="mt-4 font-black">Créer rapidement</h2><p className="mt-2 text-sm leading-6 text-slate-500">Ajoutez une nouvelle référence en quelques champs, puis complétez-la plus tard.</p><button type="button" onClick={openNew} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-600">Ouvrir le formulaire <Icon icon={faArrowRight} /></button></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><Icon icon={faSliders} className="text-xl text-sky-600" /><h2 className="mt-4 font-black">Filtres et statuts</h2><p className="mt-2 text-sm leading-6 text-slate-500">Les brouillons restent invisibles du marché jusqu’à leur activation.</p><button type="button" onClick={resetFilters} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-600">Réinitialiser la vue <Icon icon={faRotateLeft} /></button></div><div className="rounded-2xl border border-slate-200 bg-white p-5"><Icon icon={faHeartPulse} className="text-xl text-emerald-600" /><h2 className="mt-4 font-black">Synchronisation API</h2><p className="mt-2 text-sm leading-6 text-slate-500">Le mock RTK Query est prêt à être remplacé par les endpoints Laravel.</p><Link to="/admin/console" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-600">Voir la console <Icon icon={faArrowRight} /></Link></div></section></main></div>{isModalOpen && tab === 'products' && <ProductModal product={editingProduct} form={productForm} setForm={setProductForm} onClose={closeModal} onSubmit={(event) => void submitProduct(event)} isSaving={isSaving} />}{isModalOpen && tab === 'packs' && <PackModal pack={editingPack} form={packForm} setForm={setPackForm} onClose={closeModal} onSubmit={(event) => void submitPack(event)} isSaving={isSaving} />}{message && <div role="status" className="motion-enter fixed bottom-5 right-5 z-[80] rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-xl">{message}</div>}</div>;
+  return (
+    <AdminLayout currentPath="/admin/catalogue">
+      {err && (
+        <div className="m-lg rounded-lg border border-error bg-error-container p-4 text-label text-on-error-container">
+          <p className="font-bold">{tx("Erreur API")}</p>
+          <p>{err}</p>
+        </div>
+      )}
+      {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
+      <div className="m-lg">
+        <button type="button" className="btn btn-primary" onClick={() => (tab === 'packs' ? ouvrirPack(null) : ouvrir(null))}>
+          {tab === 'packs' ? tx("+ Nouveau pack (réel)") : '+ Nouveau produit (réel)'}
+        </button>
+      </div>
+      <style>{DESIGN_CSS}</style>
+  <header className="h-16 flex justify-between items-center px-lg bg-white sticky top-0 z-40 border-b border-border-default"> <div className="flex items-center gap-4"> <span className="font-h2 text-h2 font-bold text-primary">{tx("Gestion du catalogue")}</span> </div> <div className="flex items-center gap-6"> <div className="relative hidden lg:block"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" /> <input className="pl-10 pr-4 py-2 bg-bg-secondary border border-border-default rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all w-64" placeholder={tx("Rechercher un produit...")} type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> <div className="flex items-center gap-4 border-l border-border-default pl-6">  </div> </div> </header>  <div className="p-lg space-y-lg">  <div className="flex flex-col md:flex-row md:items-center justify-between gap-md"> <div className="flex gap-lg border-b border-border-default w-full md:w-auto"> {([['produits', `Produits (${produitsF.length})`], ['categories', `Catégories (${catsF.length})`], ['packs', `Packs (${packsF.length})`]] as const).map(([k, label]) => (
+                <button key={k} type="button" onClick={() => setTab(k)} className={`pb-3 px-2 font-h3 text-h3 transition-all ${tab === k ? 'text-primary border-b-2 border-primary' : 'text-text-tertiary hover:text-on-surface-variant'}`}>{label}</button>
+              ))} </div> <button className="flex items-center gap-2 bg-primary-container hover:bg-primary-hover text-white px-md py-2.5 rounded-lg font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95" type="button" onClick={() => (tab === 'packs' ? ouvrirPack(null) : ouvrir(null))}> <MIcon name="add" />
+                    {tx("Nouveau produit")}
+                </button> </div>  <div className="bg-white p-md rounded-lg shadow-sm flex flex-wrap items-center gap-4 border border-border-default"> <div className="flex-1 min-w-[200px]"> <div className="relative"> <MIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" /> <input className="w-full pl-9 pr-4 py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" placeholder="Nom, SKU ou ID..." type="text" value={q} onChange={(e) => setQ(e.target.value)} /> </div> </div> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none min-w-[140px]" value={catF} onChange={(e) => setCatF(e.target.value)}> <option value="">{tx("Catégorie: Tout")}</option>
+                {cats.map((c: any) => (
+                  <option key={c.id} value={String(c.id)}>{c.nom}</option>
+                ))}
+              </select> <select className="px-md py-2 text-label bg-white border border-border-default rounded-lg focus:ring-1 focus:ring-primary outline-none" value={dispoF} onChange={(e) => setDispoF(e.target.value)}> <option value="">{tx("Disponibilité")}</option> <option value="stock">{tx("En stock")}</option> <option value="rupture">{tx("Rupture")}</option> </select> <div className="flex border border-border-default rounded-lg overflow-hidden"> <button className="p-2 bg-bg-secondary text-primary"><MIcon name="format_list_bulleted" /></button> <button className="p-2 hover:bg-bg-secondary text-text-tertiary"><MIcon name="grid_view" /></button> </div> </div>  <div className="bg-white rounded-lg shadow-sm border border-border-default overflow-hidden"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="py-md px-lg w-10"> <input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /> </th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Produit")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Catégorie")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Prix")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider">{tx("Statut")}</th> <th className="py-md px-md font-label text-label text-text-tertiary uppercase tracking-wider text-right">Actions</th> </tr> </thead> <tbody>
+                {tab === 'produits' && slicePage(produitsF).map((pr: any) => (
+                  <tr key={pr.id} className="hover:bg-bg-secondary/50 transition-colors">
+                    <td className="py-4 px-lg"><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> {pr.image_url ? (
+                      <img src={absImageUrl(pr.image_url) ?? undefined} alt="" className="h-10 w-10 rounded-lg bg-bg-secondary object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="inventory_2" className="text-[20px]" /></div>
+                    )} <span className="font-body font-semibold">{pr.nom}</span> </div> </td>
+                    <td className="py-4 px-md text-text-secondary">{pr.categorie?.nom ?? '—'}</td>
+                    <td className="py-4 px-md font-price text-primary">{fmtFcfa(pr.prix)}</td>
+                    <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${pr.disponible !== false && Number(pr.stock) > 0 ? 'bg-success' : 'bg-text-tertiary'}`}></span> {pr.disponible !== false && Number(pr.stock) > 0 ? tx("Disponible") : 'Rupture'} </span> </td>
+                    <td className="py-4 px-md text-right"> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrir(pr)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimer(pr.id)}>{tx("Supprimer")}</button> </div> </td>
+                  </tr>
+                ))}
+                {tab === 'categories' && slicePage(catsF).map((c: any) => (
+                  <tr key={c.id} className="hover:bg-bg-secondary/50 transition-colors">
+                    <td className="py-4 px-lg"><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-text"><MIcon name="category" className="text-[20px]" /></div> <span className="font-body font-semibold">{c.nom}</span> </div> </td>
+                    <td className="py-4 px-md text-text-secondary">{c.description ?? '—'}</td>
+                    <td className="py-4 px-md font-price text-primary">—</td>
+                    <td className="py-4 px-md text-text-secondary">—</td>
+                    <td className="py-4 px-md text-right"> <div className="flex gap-2 justify-end"> <Link to="/admin/categories" className="font-semibold text-primary hover:underline">{tx("Éditer")}</Link> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerCat(c)}>{tx("Supprimer")}</button> </div> </td>
+                  </tr>
+                ))}
+                {tab === 'packs' && slicePage(packsF).map((b: any) => (
+                  <tr key={b.id} className="hover:bg-bg-secondary/50 transition-colors">
+                    <td className="py-4 px-lg"><input className="rounded border-border-default text-primary focus:ring-primary" type="checkbox" /></td>
+                    <td className="py-4 px-md"> <div className="flex items-center gap-3"> <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-primary"><MIcon name="package_2" className="text-[20px]" /></div> <span className="font-body font-semibold">{b.nom}</span> </div> </td>
+                    <td className="py-4 px-md text-text-secondary">{b.description ?? '—'}</td>
+                    <td className="py-4 px-md font-price text-primary">{fmtFcfa(Number(b.prix_total ?? b.prix_minimum ?? 0))}</td>
+                    <td className="py-4 px-md"> <span className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 w-fit ${b.disponible !== false ? 'bg-success-light text-success-dark' : 'bg-bg-secondary text-text-secondary'}`}> <span className={`w-1.5 h-1.5 rounded-full ${b.disponible !== false ? 'bg-success' : 'bg-text-tertiary'}`}></span> {b.disponible !== false ? tx("Disponible") : 'Rupture'} </span> </td>
+                    <td className="py-4 px-md text-right"> <div className="flex gap-2 justify-end"> <button type="button" className="font-semibold text-primary hover:underline" onClick={() => ouvrirPack(b)}>{tx("Modifier")}</button> <button type="button" className="font-semibold text-error hover:underline" onClick={() => void supprimerPack(b)}>{tx("Supprimer")}</button> </div> </td>
+                  </tr>
+                ))}
+                {((tab === 'produits' && produitsF.length === 0) || (tab === 'categories' && catsF.length === 0) || (tab === 'packs' && packsF.length === 0)) && (
+                  <tr><td className="py-6 px-lg text-text-secondary" colSpan={6}>{tx("Aucun résultat pour ces filtres.")}</td></tr>
+                )}
+              </tbody> </table>  <div className="py-md px-lg flex items-center justify-between border-t border-border-default bg-bg-secondary/30"> <span className="text-label text-text-secondary">{tabList.length === 0 ? `Aucun résultat` : `Affichage de ${(current - 1) * PER_PAGE + 1} à ${Math.min(current * PER_PAGE, tabList.length)} sur ${tabList.length} ${tabNoun}`}</span> <div className="flex items-center gap-2"> <button type="button" disabled={current <= 1} onClick={() => setPage(current - 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-white text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_left" className="text-[18px]" /></button> {Array.from({ length: pages }, (_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - current) <= 1).map((n) => (<button key={n} type="button" onClick={() => setPage(n)} className={n === current ? 'w-8 h-8 flex items-center justify-center rounded bg-primary-container text-white font-bold' : 'w-8 h-8 flex items-center justify-center rounded border border-border-default bg-white hover:bg-bg-secondary'}>{n}</button>))} <button type="button" disabled={current >= pages} onClick={() => setPage(current + 1)} className="w-8 h-8 flex items-center justify-center rounded border border-border-default bg-white text-text-tertiary hover:bg-bg-secondary disabled:opacity-40"><MIcon name="chevron_right" className="text-[18px]" /></button> </div> </div> </div> </div>
+      {edition && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={fermer}>
+          <div className="w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl" onClick={(e: any) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border-default p-4">
+              <h3 className="text-h3 font-h3 font-bold">
+                {mode === 'pack' ? (edition.id ? tx("Modifier le pack") : tx("Nouveau pack")) : edition.id ? tx("Modifier le produit") : tx("Nouveau produit")}
+              </h3>
+              <button type="button" onClick={fermer}>{tx("Fermer")}</button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
+              {mode === 'pack' ? (
+                <>
+                  <div><p className="text-text-secondary">{tx("Nom du pack — obligatoire")}</p><input value={packForm.nom} onChange={(e) => setPackForm({ ...packForm, nom: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  <div><p className="text-text-secondary">Description</p><textarea rows={2} value={packForm.description} onChange={(e) => setPackForm({ ...packForm, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-text-secondary">Prix total (FCFA) — obligatoire</p><input type="number" min={0} value={packForm.prix_total} onChange={(e) => setPackForm({ ...packForm, prix_total: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                    <div><p className="text-text-secondary">Prix minimum (FCFA)</p><input type="number" min={0} value={packForm.prix_minimum} onChange={(e) => setPackForm({ ...packForm, prix_minimum: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+                  </div>
+                  <div>
+                    <p className="text-text-secondary">Produits inclus</p>
+                    <div className="mt-1 space-y-2">
+                      {packForm.items.length === 0 && <p className="text-xs text-text-tertiary">{tx("Aucun produit pour l'instant.")}</p>}
+                      {packForm.items.map((it, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <select value={it.id} onChange={(e) => setPackForm({ ...packForm, items: packForm.items.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)) })} className="min-w-0 flex-1 rounded-lg border border-border-default bg-white px-3 py-2">
+                            <option value="">{tx("— Choisir un produit —")}</option>
+                            {produits.map((p: any) => <option key={p.id} value={String(p.id)}>{p.nom}</option>)}
+                          </select>
+                          <input type="number" min={1} aria-label={tx("Quantité")} value={it.qte} onChange={(e) => setPackForm({ ...packForm, items: packForm.items.map((x, j) => (j === i ? { ...x, qte: e.target.value } : x)) })} className="w-20 rounded-lg border border-border-default px-3 py-2" />
+                          <button type="button" aria-label="Retirer ce produit" className="text-text-tertiary hover:text-error" onClick={() => setPackForm({ ...packForm, items: packForm.items.filter((_, j) => j !== i) })}><MIcon name="close" /></button>
+                        </div>
+                      ))}
+                      <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => setPackForm({ ...packForm, items: [...packForm.items, { id: '', qte: '1' }] })}>{tx("+ Ajouter un produit")}</button>
+                    </div>
+                  </div>
+                  {/* Interrupteur « Disponible à la vente » — repris de la modale du design (editModal) */}
+                  <div className="flex items-center justify-between py-2 px-md bg-primary-tint/50 rounded-lg border border-primary/10">
+                    <div className="flex items-center gap-3"> <MIcon name="check_circle" className="text-primary" /> <div> <p className="text-body font-bold text-on-surface">{tx("Disponible à la vente")}</p> <p className="text-xs text-text-secondary">{tx("Afficher ce pack dans le catalogue public")}</p> </div> </div>
+                    <label className="relative inline-flex items-center cursor-pointer"> <input checked={packForm.disponible} onChange={(e) => setPackForm({ ...packForm, disponible: e.target.checked })} className="sr-only peer" type="checkbox" /> <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div> </label>
+                  </div>
+                </>
+              ) : (
+                <>
+              <div><p className="text-text-secondary">{tx("Nom")}</p><input value={form.nom} onChange={(e: any) => setForm({ ...form, nom: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">Description</p><textarea rows={2} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">{tx("Prix (FCFA)")}</p><input value={form.prix} onChange={(e: any) => setForm({ ...form, prix: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">Prix minimum (FCFA) — obligatoire</p><input value={form.prix_minimum} onChange={(e: any) => setForm({ ...form, prix_minimum: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">Stock</p><input value={form.stock} onChange={(e: any) => setForm({ ...form, stock: e.target.value })} className="w-full rounded-lg border border-border-default px-3 py-2" /></div>
+              <div><p className="text-text-secondary">{tx("Catégorie — obligatoire")}</p>
+                <select value={form.categorie_id} onChange={(e: any) => setForm({ ...form, categorie_id: e.target.value })} className="w-full rounded-lg border border-border-default bg-white px-3 py-2">
+                  <option value="">{tx("— Choisir —")}</option>
+                  {cats.map((c: any) => <option key={c.id} value={String(c.id)}>{c.nom}</option>)}
+                </select>
+              </div>
+              <div>
+                <p className="text-text-secondary">Image du produit</p>
+                <div
+                  className="mt-1 group cursor-pointer rounded-lg border-2 border-dashed border-outline-variant/50 bg-bg-secondary p-4 text-center transition-colors hover:bg-bg-secondary/80"
+                  onClick={() => imageInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => { e.preventDefault(); pickImage(e.dataTransfer.files?.[0]); }}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="" className="mx-auto max-h-36 rounded-lg object-contain" />
+                  ) : (
+                    <MIcon name="cloud_upload" className="mb-2 text-3xl text-primary transition-transform group-hover:scale-110" />
+                  )}
+                  <p className="font-medium">{imagePreview ? "Changer l'image" : 'Cliquez pour choisir une image'}</p>
+                  <p className="mt-1 text-xs text-text-tertiary">PNG, JPG ou WEBP (Max. 4 Mo)</p>
+                  {imageFile && <p className="mt-1 text-xs font-semibold text-primary">{imageFile.name}</p>}
+                </div>
+                {imagePreview && (
+                  <button type="button" className="mt-1 text-xs text-text-secondary underline" onClick={clearImage}>
+                    {imageFile ? "Retirer l'image choisie" : "Retirer l'image"}
+                  </button>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => { pickImage(e.target.files?.[0]); e.target.value = ''; }}
+                />
+              </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border-default p-4">
+              <button type="button" className="btn btn-ghost" onClick={fermer}>{tx("Annuler")}</button>
+              <button type="button" className="btn btn-primary" onClick={mode === 'pack' ? enregistrerPack : enregistrer}>{tx("Enregistrer")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
+  );
 }

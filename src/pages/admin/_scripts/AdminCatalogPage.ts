@@ -1,0 +1,1 @@
+export default '\n        // Toggle Modal helper\n        function toggleModal(id, show) {\n            const el = document.getElementById(id);\n            if(show) el.classList.remove(\'hidden\');\n            else el.classList.add(\'hidden\');\n        }\n    ';

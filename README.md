@@ -1,78 +1,140 @@
 # TOKPa Frontend
 
-Application React responsive et dynamique pour TOKPa, le marché de proximité béninois. Les écrans sont alignés sur les maquettes fournies : accueil, authentification, catalogue, produit, négociation, panier/commande, confirmation, notifications, espaces client/livreur/manager/admin, gestion des zones, équipe et console système.
+Frontend React du marché numérique TOKPa, fusionné avec la base frontend `elfred434/etokpa` et adapté au dépôt principal `daniel13765/Topka`.
+
+Cette version conserve la direction visuelle TOKPa tout en intégrant l’architecture plus complète du dépôt Elfred : appels API Laravel, authentification Sanctum, TanStack Router, TanStack Query, Redux, Reverb, Leaflet, administration et tests métier.
 
 ## Stack
 
-- Vite 8
-- React 19 + TypeScript strict
+- React 19 + Vite 8
+- TypeScript et JSX stricts
+- TanStack Router, Query, Table, Form et Virtual
+- Redux Toolkit
 - Tailwind CSS 4
-- Redux Toolkit + RTK Query
-- React Router
-- Laravel Echo + Pusher JS préparés pour Laravel Reverb
-- Font Awesome via `@fortawesome/react-fontawesome` et les icônes Solid
-- Images de marché et assets visuels TOKPa intégrés dans `public/images/`
-- Adaptateurs isolés pour géolocalisation et FedaPay
+- Axios pour l’API Laravel
+- Laravel Echo + Pusher pour Reverb
+- Leaflet / React Leaflet pour les cartes
+- Fontsource Inter, Material Symbols et Recharts
+- Vitest, Testing Library et MSW pour les tests
 
-## Démarrage
+## Installation et démarrage
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env.local
 npm run dev
 ```
 
-Le serveur écoute sur `http://localhost:5173`. L’API frontend utilise `/api`; Vite la proxyfie vers `VITE_BACKEND_URL` côté serveur de développement.
+Le serveur démarre sur :
+
+```text
+http://localhost:5173
+```
+
+Le backend Laravel doit être disponible sur l’URL configurée dans `VITE_API_BASE_URL` pour charger les données réelles.
+
+## Variables d’environnement
+
+Exemple de configuration locale :
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_REVERB_HOST=localhost
+VITE_REVERB_PORT=8080
+VITE_REVERB_WSS_PORT=443
+VITE_REVERB_SCHEME=ws
+VITE_REVERB_KEY=tokpa-key
+VITE_REVERB_APP_ID=tokpa
+VITE_GOOGLE_MAPS_API_KEY=
+```
+
+Les clés privées ne doivent jamais être commitée dans GitHub.
 
 ## Vérifications
 
 ```bash
 npm run typecheck
 npm run build
+npm test -- --run
 ```
 
-## Routes de démonstration
+Le build Vite peut afficher un avertissement concernant la taille du bundle, notamment à cause de Material Symbols et des bibliothèques de tableaux/cartes.
 
-- `/` : accueil TOKPa et sélection du marché
-- `/connexion` : accès de démonstration par rôle
-- `/inscription` : inscription en deux étapes (profil puis sécurité)
-- `/verification-email` : vérification du code e-mail (code démo `427913`)
-- `/catalogue` : catalogue avec recherche, filtres et tri
-- `/produit/:productId` : détail produit, panier et négociation
-- `/commande` : panier, adresse de livraison et paiement FedaPay mocké
-- `/commande/succes` : confirmation de commande
-- `/client` : espace client
-- `/client/notifications` : centre de notifications dynamique
-- `/client/negociations` : suivi des offres et contre-propositions
-- `/livreur` : espace livreur
-- `/manager` : tableau de bord manager
-- `/manager/equipe` : équipe, ajout de livreur et attribution de course
-- `/manager/zones` : gestion des zones, tarifs et points de repère
-- `/admin` : espace administrateur
-- `/admin/catalogue` : administration des produits et packs autonomes
-- `/admin/console` : santé des services, trafic API et journal admin
+## Routes principales
 
-Les espaces protégés utilisent la connexion de démonstration et les rôles `client`, `livreur`, `manager` et `admin`.
+### Client
 
-## Configuration et sécurité
+- `/` : accueil TOKPa connecté à l’API
+- `/connexion` : connexion
+- `/inscription` : inscription
+- `/verification-2fa` : vérification 2FA
+- `/reset-password` : réinitialisation du mot de passe
+- `/catalogue` : catalogue API avec recherche et filtres
+- `/produit/:productId` : fiche produit
+- `/panier` : panier
+- `/confirmation` : confirmation de commande
+- `/commandes` : liste des commandes
+- `/commandes/suivi` : suivi d’une commande
+- `/negociations` : négociations et propositions de prix
+- `/notifications` : notifications temps réel
+- `/profil` : profil client
+- `/messagerie` : messagerie
 
-Le projet utilise les mocks lorsque le backend Laravel n’est pas disponible :
+### Administration
 
-```env
-VITE_USE_MOCKS=true
+- `/admin` : tableau de bord
+- `/admin/catalogue` : produits, catégories et packs composés
+- `/admin/categories` : catégories
+- `/admin/commandes` : commandes
+- `/admin/zones` : zones et points de repère
+- `/admin/utilisateurs` : utilisateurs
+- `/admin/livreurs` : livreurs
+- `/admin/validations` : validations
+- `/admin/logs` : audit
+- `/admin/parametres` : paramètres
+- `/admin/systeme` : système et services
+- `/admin/bdd-jobs` : base de données et tâches
+- `/admin/cles-api` : clés API
+- `/admin/securite` : sécurité
+
+### Manager
+
+- `/manager` : tableau de bord
+- `/manager/commandes` : commandes de zone
+- `/manager/equipe` : équipe
+- `/manager/statistiques` : statistiques
+- `/manager/litiges` : litiges
+- `/manager/parametres` : paramètres
+- `/manager/parametres/zone` : préférences de zone
+
+### Livreur
+
+- `/livreur` : tableau de bord
+- `/livreur/course` : course active
+- `/livreur/recapitulatif` : récapitulatif de course
+- `/livreur/historique` : historique
+- `/livreur/parametres` : paramètres
+
+## API Laravel attendue
+
+Les adaptateurs se trouvent dans `src/services/api/` :
+
+- authentification et session Sanctum ;
+- catalogue et catégories ;
+- packs / bundles ;
+- commandes et paiements ;
+- négociations ;
+- notifications ;
+- zones et landmarks ;
+- utilisateurs, livreurs et administration ;
+- messagerie et temps réel.
+
+Les endpoints admin des packs utilisent le modèle composé : un pack possède un prix global et une liste de produits avec leurs quantités.
+
+## GitHub
+
+Le projet fusionné est publié dans :
+
+```text
+https://github.com/daniel13765/Topka
 ```
-
-La clé Google Maps ne doit jamais être commitée. Renseignez-la uniquement dans un fichier local `.env` ou `.env.local` :
-
-```env
-VITE_GOOGLE_MAPS_API_KEY=votre_cle_locale
-```
-
-## À brancher ensuite
-
-1. Authentification Sanctum et 2FA côté Laravel.
-2. Endpoints RTK Query dans `src/services/api/`.
-3. Canaux privés Laravel Reverb dans `src/services/realtime/`.
-4. Paiement FedaPay confirmé par webhook backend.
-5. Google Maps réel via la variable d’environnement.
-6. Tests unitaires et e2e des parcours de commande et de livraison.
