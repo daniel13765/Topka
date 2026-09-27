@@ -131,6 +131,8 @@ Les adaptateurs se trouvent dans `src/services/api/` :
 
 Les endpoints admin des packs utilisent le modèle composé : un pack possède un prix global et une liste de produits avec leurs quantités.
 
+Le détail de l’installation Laravel et de la correspondance des endpoints est documenté dans [`docs/backend-integration.md`](docs/backend-integration.md).
+
 ## GitHub
 
 Le projet fusionné est publié dans :
