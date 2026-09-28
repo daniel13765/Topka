@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { authApi, livreurApi } from '../../../services/api';
@@ -14,7 +14,6 @@ import { tx } from '../../../i18n/tx';
 
 import {
   articlesCount,
-  dateHeure,
   destination,
   fetchDeliveries,
   fetchLivreurProfile,
@@ -25,269 +24,432 @@ import {
   type LivreurProfile,
 } from '../livreurData';
 
+function heureCourte(iso?: string | null): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+}
+
+function pointLabel(order: LivreurOrder): string {
+  return order.landmark?.nom || tx('Point de retrait');
+}
+
+function orderInitials(order: LivreurOrder): string {
+  return initialsOf(pointLabel(order), 'PR');
+}
+
 /**
- * Tableau de bord livreur — design Stitch « tableau_de_bord_livreur_tokpa_fr », données réelles :
- * GET /dashboard (commandes, en_cours), GET /livreur/deliveries, GET /livreur/history, GET /profile.
- * Retirés (aucune donnée dans l'API) : photo, véhicule, étoiles/avis, tendances « vs hier »,
- * interrupteur « Disponible » (la disponibilité réelle est affichée, pas modifiable : B-26).
+ * Tableau de bord livreur — maquette Stitch « tableau_de_bord_livreur_tokpa_fr ».
+ *
+ * Les données viennent de l'API :
+ * - GET /dashboard ; GET /livreur/deliveries ; GET /livreur/history ; GET /profile
+ * - PATCH /livreur/deliveries/{id}/accept et /refuse pour les actions rapides.
+ *
+ * La maquette contient des informations (client, véhicule, note) que les ressources
+ * backend actuelles n'exposent pas encore. L'interface affiche donc le point de
+ * repère, le statut réel et un tiret lorsque la donnée est absente, plutôt que de
+ * présenter une valeur factice comme une information vérifiée.
  */
 export default function LivreurDashboardPage() {
   useLanguage();
   const navigate = useNavigate();
-  const nom = currentUserName();
+  const sessionName = currentUserName();
+
   const [deliveries, setDeliveries] = useState<LivreurOrder[] | null>(null);
   const [delivErr, setDelivErr] = useState<string | null>(null);
   const [dash, setDash] = useState<{ commandes: number; en_cours: number } | null>(null);
+  const [dashErr, setDashErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<LivreurOrder[] | null>(null);
   const [histTotal, setHistTotal] = useState<number | null>(null);
   const [histErr, setHistErr] = useState<string | null>(null);
   const [profile, setProfile] = useState<LivreurProfile | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const retry = () => setReloadKey((k) => k + 1);
+
+  const retry = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
     let alive = true;
     setDeliveries(null);
+    setRecent(null);
+    setDash(null);
     setDelivErr(null);
+    setDashErr(null);
     setHistErr(null);
+
     fetchDeliveries()
-      .then((l) => alive && setDeliveries(l))
-      .catch((e) => alive && setDelivErr(alertApiError(e, 'livreur-load')));
+      .then((items) => alive && setDeliveries(items))
+      .catch((error) => alive && setDelivErr(alertApiError(error, 'livreur-load')));
+
     authApi
       .getDashboard()
-      .then((d) => alive && setDash({ commandes: Number(d?.commandes ?? 0), en_cours: Number(d?.en_cours ?? 0) }))
-      .catch((e) => alive && alertApiError(e, 'livreur-load'));
+      .then((data) => {
+        if (!alive) return;
+        setDash({ commandes: Number(data?.commandes ?? 0), en_cours: Number(data?.en_cours ?? 0) });
+      })
+      .catch((error) => alive && setDashErr(alertApiError(error, 'livreur-load')));
+
     livreurApi
       .getHistory(1)
-      .then((res: { meta?: { total?: number } }) => {
+      .then((response: { meta?: { total?: number } }) => {
         if (!alive) return;
-        setRecent(listOf(res).map(unwrapOrder).slice(0, 5));
-        setHistTotal(Number(res?.meta?.total ?? 0));
+        setRecent(listOf(response).map(unwrapOrder).slice(0, 5));
+        setHistTotal(Number(response?.meta?.total ?? 0));
       })
-      .catch((e) => alive && setHistErr(alertApiError(e, 'livreur-load')));
+      .catch((error) => alive && setHistErr(alertApiError(error, 'livreur-load')));
+
     fetchLivreurProfile()
-      .then((p) => alive && setProfile(p))
+      .then((value) => alive && setProfile(value))
       .catch(() => alive && setProfile(null));
+
     return () => {
       alive = false;
     };
   }, [reloadKey]);
 
-  const active = deliveries?.find((o) => o.statut === 'en_livraison') ?? null;
-  const pending = (deliveries ?? []).filter((o) => o.statut !== 'en_livraison');
-  // Succès = livrées / courses terminées (livrées + annulées) = historique / (commandes − en cours)
-  const terminees = dash ? dash.commandes - dash.en_cours : null;
-  const succes = terminees && terminees > 0 && histTotal != null ? Math.round((histTotal / terminees) * 100) : null;
+  const active = deliveries?.find((order) => order.statut === 'en_livraison') ?? null;
+  const pending = (deliveries ?? []).filter((order) => order.statut !== 'en_livraison');
+  const finished = dash ? Math.max(0, dash.commandes - dash.en_cours) : null;
+  const successRate = finished && finished > 0 && histTotal != null ? Math.round((histTotal / finished) * 100) : null;
+  const displayName = profile?.nom_complet || [profile?.prenom, profile?.nom].filter(Boolean).join(' ') || sessionName || tx('Livreur');
+  const locationLabel = profile?.zone || tx('Zone non attribuée');
+  const recentTotal = useMemo(
+    () => (recent ?? []).reduce((total, order) => total + Number(order.frais_livraison ?? 0), 0),
+    [recent],
+  );
 
-  const accept = async (o: LivreurOrder) => {
-    setBusy(o.id);
+  const accept = async (order: LivreurOrder) => {
+    setBusy(order.id);
     try {
-      const r = await livreurApi.acceptDelivery(o.id);
-      toast.success(r?.message ?? tx("Course acceptée."));
-      navigate({ to: '/livreur/course', search: { commande: o.id } });
-    } catch (e) {
-      alertApiError(e, 'livreur-accept');
+      const response = await livreurApi.acceptDelivery(order.id);
+      toast.success(response?.message ?? tx('Course acceptée.'));
+      navigate({ to: '/livreur/course', search: { commande: order.id } });
+    } catch (error) {
+      alertApiError(error, 'livreur-accept');
     } finally {
       setBusy(null);
     }
   };
 
-  const refuse = async (o: LivreurOrder) => {
-    if (!confirm(`Refuser la course ${tokRef(o.id)} ? Elle sera remise en file.`)) return;
-    setBusy(o.id);
+  const refuse = async (order: LivreurOrder) => {
+    if (!confirm(`Refuser la course ${tokRef(order.id)} ? Elle sera remise en file.`)) return;
+    setBusy(order.id);
     try {
-      const r = await livreurApi.refuseDelivery(o.id);
-      toast.success(r?.message ?? tx("Course refusée."));
-      setDeliveries((l) => (l ?? []).filter((x) => x.id !== o.id));
-    } catch (e) {
-      alertApiError(e, 'livreur-refuse');
+      const response = await livreurApi.refuseDelivery(order.id);
+      toast.success(response?.message ?? tx('Course refusée.'));
+      setDeliveries((items) => (items ?? []).filter((item) => item.id !== order.id));
+    } catch (error) {
+      alertApiError(error, 'livreur-refuse');
     } finally {
       setBusy(null);
     }
+  };
+
+  const statValues = {
+    courses: dash ? String(dash.commandes).padStart(2, '0') : '—',
+    success: successRate != null ? `${successRate}%` : '—',
+    stars: '—',
   };
 
   return (
     <LivreurLayout>
-      <div className="mx-auto max-w-[1280px] space-y-lg p-lg">
-        {/* Top Section: Profile & Stats */}
-        <div className="grid grid-cols-1 gap-md lg:grid-cols-4">
-          {/* Profile Card */}
-          <div className="flex flex-col justify-between rounded-lg border border-border-default bg-bg-card p-md shadow-sm lg:col-span-1">
-            <div className="mb-md flex items-center justify-between">
-              {profile?.disponible != null ? (
-                <div
-                  className={
-                    profile.disponible
-                      ? 'flex items-center gap-xs rounded-full bg-success-light px-sm py-xs text-success'
-                      : 'flex items-center gap-xs rounded-full bg-bg-secondary px-sm py-xs text-text-secondary'
-                  }
-                >
-                  <div className={profile.disponible ? 'h-2 w-2 rounded-full bg-success' : 'h-2 w-2 rounded-full bg-text-tertiary'} />
-                  <span className="text-[11px] font-bold uppercase tracking-wider">
-                    {profile.disponible ? tx("Disponible") : 'Indisponible'}
-                  </span>
-                </div>
-              ) : (
-                <span />
-              )}
+      <div className="mx-auto max-w-[1280px] space-y-6 p-4 sm:p-6">
+        {/* Version mobile : hero orange et statistiques intégrées, comme la maquette 375 px. */}
+        <section className="rounded-[14px] bg-primary p-5 text-white shadow-lg lg:hidden">
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold">{displayName}</h1>
+              <p className="mt-1 flex items-center gap-1 text-sm text-white/90">
+                <FaIcon name="location_on" className="text-xs" />
+                {locationLabel}
+              </p>
             </div>
-            <div className="flex flex-col items-center py-sm">
-              <div className="mb-sm flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-4 border-primary-light bg-primary-tint text-2xl font-bold text-primary">
-                {initialsOf(nom, 'LV')}
+            <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm">
+              <span className={profile?.disponible === false ? 'text-xs font-bold text-text-secondary' : 'text-xs font-bold text-primary'}>
+                {profile?.disponible === false ? tx('Indisponible') : tx('Disponible')}
+              </span>
+              <span className="relative h-4 w-8 rounded-full bg-primary/20" aria-hidden="true">
+                <span
+                  className={profile?.disponible === false ? 'absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-text-tertiary' : 'absolute right-0.5 top-0.5 h-3 w-3 rounded-full bg-primary'}
+                />
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 rounded-xl bg-white/10 p-3 backdrop-blur-sm">
+            <div className="border-r border-white/20 text-center">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-white/80">{tx('Courses')}</p>
+              <p className="text-lg font-bold">{statValues.courses}</p>
+            </div>
+            <div className="border-r border-white/20 text-center">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-white/80">{tx('Succès')}</p>
+              <p className="text-lg font-bold">{statValues.success}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-white/80">{tx('Étoiles')}</p>
+              <p className="flex items-center justify-center gap-1 text-lg font-bold">
+                {statValues.stars}
+                <FaIcon name="star" className="text-[10px] text-amber-300" />
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Version desktop : profil à gauche + trois cartes statistiques. */}
+        <section className="hidden grid-cols-1 gap-4 lg:grid lg:grid-cols-4">
+          <div className="flex flex-col justify-between rounded-[14px] border border-border-default bg-bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className={profile?.disponible === false ? 'badge bg-bg-secondary text-text-secondary' : 'badge badge-available'}>
+                {profile?.disponible === false ? tx('Indisponible') : tx('Disponible')}
+              </span>
+              <span
+                role="switch"
+                aria-checked={profile?.disponible === true}
+                aria-label={tx('Statut de disponibilité')}
+                className={profile?.disponible === false ? 'relative h-6 w-11 rounded-full bg-border-default' : 'relative h-6 w-11 rounded-full bg-success'}
+              >
+                <span className={profile?.disponible === false ? 'absolute left-0.5 top-0.5 h-5 w-5 rounded-full border border-border-default bg-white' : 'absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white'} />
+              </span>
+            </div>
+            <div className="flex flex-col items-center py-4">
+              <div className="mb-2 flex h-20 w-20 items-center justify-center rounded-full border-4 border-primary-light bg-primary-tint text-2xl font-bold text-primary">
+                {initialsOf(displayName, 'LV')}
               </div>
-              <h2 className="text-center font-h2 text-h2 text-text-main">{nom ?? tx("Livreur")}</h2>
-              <p className="font-secondary text-secondary">{profile?.zone ? `Zone ${profile.zone}` : tx("Zone non attribuée")}</p>
+              <h2 className="text-center text-xl font-semibold text-text-main">{displayName}</h2>
+              <p className="text-sm text-text-secondary">{locationLabel}</p>
             </div>
           </div>
 
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 gap-md md:grid-cols-3 lg:col-span-3">
-            <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:col-span-3">
+            <div className="flex items-center gap-4 rounded-[14px] border border-border-default bg-bg-card p-5 shadow-sm">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-tint text-primary">
-                <MIcon name="motorcycle" className="text-3xl" />
+                <FaIcon name="motorcycle" className="text-2xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">{tx("Courses")}</p>
-                <h3 className="font-h1 text-h1 text-primary">{dash ? String(dash.commandes).padStart(2, '0') : '—'}</h3>
-                <p className="text-[11px] font-bold text-text-secondary">{tx("Assignées depuis le début")}</p>
+                <p className="font-label text-text-secondary">{tx('Courses')}</p>
+                <h3 className="font-h1 text-primary">{statValues.courses}</h3>
+                <p className="text-[11px] font-bold text-text-secondary">{tx('Assignées depuis le début')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
+            <div className="flex items-center gap-4 rounded-[14px] border border-border-default bg-bg-card p-5 shadow-sm">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-light text-success">
-                <MIcon name="task_alt" className="text-3xl" />
+                <FaIcon name="task_alt" className="text-2xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">{tx("Succès")}</p>
-                <h3 className="font-h1 text-h1 text-success">{succes != null ? `${succes}%` : '—'}</h3>
+                <p className="font-label text-text-secondary">{tx('Succès')}</p>
+                <h3 className="font-h1 text-success">{statValues.success}</h3>
                 <p className="text-[11px] font-bold text-text-secondary">
-                  {terminees ? `${histTotal ?? 0} livrées sur ${terminees} terminées` : tx("Aucune course terminée")}
+                  {finished ? `${histTotal ?? 0} livrées sur ${finished} terminées` : tx('Aucune course terminée')}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-md rounded-lg border border-border-default bg-bg-card p-lg shadow-sm">
+            <div className="flex items-center gap-4 rounded-[14px] border border-border-default bg-bg-card p-5 shadow-sm">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-light text-amber-text">
-                <MIcon name="pending_actions" className="text-3xl" />
+                <FaIcon name="star" className="text-2xl" />
               </div>
               <div>
-                <p className="font-label text-text-secondary">{tx("En cours")}</p>
-                <h3 className="font-h1 text-h1 text-on-surface">{dash ? String(dash.en_cours) : '—'}</h3>
-                <p className="text-[11px] font-bold text-text-secondary">{tx("À préparer ou à livrer")}</p>
+                <p className="font-label text-text-secondary">{tx('Étoiles')}</p>
+                <h3 className="font-h1 text-on-surface">{statValues.stars}</h3>
+                <p className="text-[11px] font-bold text-text-secondary">{tx('Non disponible dans le profil')}</p>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Middle Section: Active & Requests */}
-        <div className="grid grid-cols-1 gap-lg lg:grid-cols-2">
-          {/* Left: Active Delivery */}
-          <section className="space-y-md">
-            <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
-              <MIcon name="speed" className="text-primary" />
-              {tx("En livraison")}
-            </h3>
+        {dashErr && (
+          <div className="flex items-center justify-between rounded-[10px] border border-primary-light bg-primary-tint px-4 py-3 text-sm text-primary-dark">
+            <span>{dashErr}</span>
+            <button type="button" onClick={retry} className="font-semibold underline">
+              {tx('Réessayer')}
+            </button>
+          </div>
+        )}
+
+        {/* En livraison / En attente */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section className="space-y-3">
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-text-main">
+              <FaIcon name="speed" className="text-primary" />
+              {tx('En livraison')}
+            </h2>
             {delivErr ? (
               <ApiErrorState
-                title={tx("Impossible de charger vos courses")}
+                title={tx('Impossible de charger vos courses')}
                 message={delivErr}
                 onRetry={retry}
-                className="rounded-lg border border-border-default bg-bg-card px-md"
+                className="rounded-[14px] border border-border-default bg-bg-card px-4"
               />
             ) : deliveries === null ? (
-              <LoadingState label={tx("Chargement de vos courses…")} className="rounded-lg border border-border-default bg-bg-card" />
+              <LoadingState label={tx('Chargement de vos courses…')} className="rounded-[14px] border border-border-default bg-bg-card" />
             ) : active ? (
-              <div className="rounded-lg border-l-4 border-primary bg-bg-card p-lg shadow-sm">
-                <div className="mb-md flex items-start justify-between gap-md">
-                  <div>
-                    <span className="rounded bg-primary-tint px-sm py-1 text-xs font-bold text-primary">{tokRef(active.id)}</span>
-                    <h4 className="mt-sm font-h3 text-h3">{active.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
-                    <p className="text-sm text-secondary">
-                      {articlesCount(active)} article(s) · {statutLabel(active.statut)}
-                    </p>
+              <>
+                {/* Compact card mobile : le CTA reste immédiatement accessible. */}
+                <div className="rounded-[14px] border border-border-default bg-bg-card p-4 shadow-sm lg:hidden">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="badge badge-low-stock">{statutLabel(active.statut)}</span>
+                    <span className="text-xs text-text-secondary">{tokRef(active.id)}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="font-price text-primary">{fmtFcfa(active.montant_total)}</p>
-                    <p className="text-[11px] text-text-secondary">Livraison : {fmtFcfa(active.frais_livraison)}</p>
-                  </div>
+                  <Link
+                    to="/livreur/course"
+                    search={{ commande: active.id }}
+                    className="block w-full rounded-[10px] bg-primary py-3.5 text-center text-[15px] font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98]"
+                  >
+                    {tx('Voir la course active')}
+                  </Link>
                 </div>
-                <div className="mb-lg flex items-center gap-md rounded-lg bg-bg-secondary p-md">
-                  <MIcon name="location_on" className="text-text-secondary" />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold uppercase text-text-secondary">Destination</p>
-                    <p className="text-sm">{destination(active)}</p>
+
+                {/* Card desktop : détail du point de retrait et destination. */}
+                <div className="hidden rounded-[14px] border-l-4 border-primary bg-bg-card p-6 shadow-sm lg:block">
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <span className="rounded bg-primary-tint px-2 py-1 text-xs font-bold text-primary">{tokRef(active.id)}</span>
+                      <h3 className="mt-3 text-base font-semibold text-text-main">{pointLabel(active)}</h3>
+                      <p className="text-sm text-text-secondary">
+                        {articlesCount(active)} {tx('article(s)')} · {statutLabel(active.statut)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-price text-primary">{fmtFcfa(active.montant_total)}</p>
+                      <p className="text-[11px] text-text-secondary">
+                        {tx('Livraison')} : {fmtFcfa(active.frais_livraison)}
+                      </p>
+                    </div>
                   </div>
+                  <div className="mb-6 flex items-center gap-3 rounded-[10px] bg-bg-secondary p-4">
+                    <FaIcon name="location_on" className="text-text-secondary" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold uppercase text-text-secondary">{tx('Destination')}</p>
+                      <p className="text-sm text-text-main">{destination(active)}</p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/livreur/course"
+                    search={{ commande: active.id }}
+                    className="block w-full rounded-[10px] bg-primary py-3.5 text-center text-[15px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-primary-hover active:scale-[0.98]"
+                  >
+                    {tx('Voir la course active')}
+                  </Link>
                 </div>
-                <Link
-                  to="/livreur/course"
-                  search={{ commande: active.id }}
-                  className="block w-full rounded-xl bg-[#F97316] py-3.5 text-center text-[15px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[#EA580C] active:scale-95"
-                >
-                  {tx("Voir la course active")}
-                </Link>
-              </div>
+              </>
             ) : (
-              <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-                {tx("Aucune livraison en cours pour le moment.")}
+              <div className="rounded-[14px] border border-border-default bg-bg-card p-6 text-center text-sm text-text-secondary shadow-sm">
+                {tx('Aucune livraison en cours pour le moment.')}
               </div>
             )}
           </section>
 
-          {/* Right: Pending Requests */}
-          <section className="space-y-md">
-            <h3 className="flex items-center justify-between font-h2 text-h2 text-text-main">
-              <span className="flex items-center gap-sm">
-                <MIcon name="pending_actions" className="text-secondary-container" />
-                En attente ({pending.length})
+          <section className="space-y-3">
+            <h2 className="flex items-center justify-between text-xl font-semibold text-text-main">
+              <span className="flex items-center gap-2">
+                <FaIcon name="pending_actions" className="text-secondary-container" />
+                {tx('En attente')} ({pending.length})
               </span>
               <Link to="/livreur/course" className="text-sm font-bold text-primary hover:underline">
-                {tx("Voir tout")}
+                {tx('Voir tout')}
               </Link>
-            </h3>
-            <div className="space-y-md">
-              {deliveries !== null && pending.length === 0 && !delivErr && (
-                <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-                  {tx("Aucune course en attente.")}
-                </div>
-              )}
-              {pending.map((o) => (
-                <div
-                  key={o.id}
-                  className="flex flex-col justify-between gap-md rounded-lg border border-border-default bg-bg-card p-md shadow-sm transition-all hover:border-primary/30 md:flex-row md:items-center"
-                >
-                  <div className="flex items-center gap-md">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container">
-                      <MIcon name="inventory_2" className="text-on-surface-variant" />
+            </h2>
+
+            {deliveries !== null && pending.length === 0 && !delivErr && (
+              <div className="rounded-[14px] border border-border-default bg-bg-card p-6 text-center text-sm text-text-secondary shadow-sm">
+                {tx('Aucune course en attente.')}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {pending.map((order) => (
+                <div key={order.id} className="rounded-[14px] border-l-[3px] border-primary bg-bg-card shadow-sm transition-all hover:border-primary-hover">
+                  {/* Mobile card, fidèle à la version 375 px de la maquette. */}
+                  <div className="p-4 lg:hidden">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-bold text-text-main">{tokRef(order.id)}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-amber-light px-2 py-0.5 text-[10px] font-bold uppercase text-amber-text">
+                            {statutLabel(order.statut)}
+                          </span>
+                          <span className="flex items-center gap-1 text-[11px] font-medium text-text-tertiary">
+                            <FaIcon name="schedule" className="text-[10px]" />
+                            {heureCourte(order.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-price text-lg text-primary">{fmtFcfa(order.montant_total)}</p>
+                        <p className="text-[11px] uppercase text-text-secondary">
+                          {articlesCount(order)} {tx('articles')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-h3 text-h3">{o.landmark?.nom ?? tx("Point de repère non renseigné")}</h4>
-                      <p className="text-xs text-secondary">
-                        {tokRef(o.id)} • {articlesCount(o)} article(s) • {statutLabel(o.statut)}
-                      </p>
+                    <div className="flex items-center gap-3 border-y border-gray-100 py-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint font-bold text-primary">
+                        {orderInitials(order)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-text-main">{pointLabel(order)}</p>
+                        <p className="flex items-center gap-1 truncate text-xs text-text-secondary">
+                          <FaIcon name="motorcycle" className="text-[11px]" />
+                          {destination(order)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="ml-auto flex items-center gap-sm">
-                    <div className="mr-sm text-right">
-                      <p className="font-price text-lg text-on-surface">{fmtFcfa(o.montant_total)}</p>
-                    </div>
-                    <div className="flex gap-xs">
+                    <div className="mt-4 grid grid-cols-2 gap-3">
                       <button
                         type="button"
-                        title={tx("Refuser")}
-                        aria-label={`Refuser la course ${tokRef(o.id)}`}
-                        disabled={busy === o.id}
-                        onClick={() => refuse(o)}
-                        className="flex items-center justify-center rounded-xl border border-[#FCA5A5] bg-[#FEF2F2] p-3 text-[#991B1B] transition-all hover:bg-[#FEE2E2] active:scale-90 disabled:opacity-50"
+                        disabled={busy === order.id}
+                        onClick={() => refuse(order)}
+                        className="btn btn-danger w-full font-bold disabled:opacity-50"
                       >
-                        <MIcon name="close" className="text-[20px]" />
+                        {tx('Refuser')}
                       </button>
                       <button
                         type="button"
-                        disabled={busy === o.id}
-                        onClick={() => accept(o)}
-                        className="flex items-center gap-xs rounded-lg bg-success px-lg py-md font-bold text-white transition-all hover:bg-success-dark active:scale-95 disabled:opacity-50"
+                        disabled={busy === order.id}
+                        onClick={() => accept(order)}
+                        className="btn w-full border-0 bg-success font-bold text-white hover:bg-success-dark disabled:opacity-50"
                       >
-                        <MIcon name="check" />
-                        {tx("Accepter")}
+                        <FaIcon name="check" />
+                        {tx('Accepter')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Desktop card : point de repère, montant et actions sur une ligne. */}
+                  <div className="hidden items-center justify-between gap-4 p-4 lg:flex">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary">
+                        <FaIcon name="person" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-h3 truncate text-text-main">{pointLabel(order)}</h3>
+                        <p className="text-xs text-text-secondary">
+                          {tokRef(order.id)} · {articlesCount(order)} {tx('articles')}
+                        </p>
+                        <p className="truncate text-xs text-text-secondary">{destination(order)}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-price text-lg text-on-surface">{fmtFcfa(order.montant_total)}</p>
+                      <p className="text-[11px] text-text-secondary">{heureCourte(order.created_at)}</p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        title={tx('Refuser')}
+                        aria-label={`Refuser la course ${tokRef(order.id)}`}
+                        disabled={busy === order.id}
+                        onClick={() => refuse(order)}
+                        className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-error-border bg-error-light text-error-dark transition-all hover:bg-red-100 active:scale-90 disabled:opacity-50"
+                      >
+                        <FaIcon name="close" className="text-lg" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === order.id}
+                        onClick={() => accept(order)}
+                        className="btn min-h-11 bg-success px-5 font-bold text-white hover:bg-success-dark disabled:opacity-50"
+                      >
+                        <FaIcon name="check" />
+                        {tx('Accepter')}
                       </button>
                     </div>
                   </div>
@@ -297,57 +459,90 @@ export default function LivreurDashboardPage() {
           </section>
         </div>
 
-        {/* Bottom Section: Recent Deliveries */}
-        <section className="space-y-md">
-          <h3 className="flex items-center gap-sm font-h2 text-h2 text-text-main">
-            <MIcon name="event_available" className="text-success" />
-            {tx("Dernières livraisons")}
-          </h3>
+        {/* Historique court : tableau desktop, liste compacte mobile. */}
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-text-main">
+            <FaIcon name="event_available" className="text-success" />
+            {tx("Livrées aujourd'hui")}
+          </h2>
           {histErr ? (
             <ApiErrorState
               title={tx("Impossible de charger l'historique")}
               message={histErr}
               onRetry={retry}
-              className="rounded-lg border border-border-default bg-bg-card px-md"
+              className="rounded-[14px] border border-border-default bg-bg-card px-4"
             />
           ) : recent === null ? (
-            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-lg border border-border-default bg-bg-card" />
+            <LoadingState label={tx("Chargement de l'historique…")} className="rounded-[14px] border border-border-default bg-bg-card" />
           ) : recent.length === 0 ? (
-            <div className="rounded-lg border border-border-default bg-bg-card p-lg text-center text-secondary text-text-secondary shadow-sm">
-              {tx("Aucune livraison effectuée pour le moment.")}
+            <div className="rounded-[14px] border border-border-default bg-bg-card p-6 text-center text-sm text-text-secondary shadow-sm">
+              {tx('Aucune livraison effectuée pour le moment.')}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border-default bg-bg-card shadow-sm">
-              <table className="w-full border-collapse text-left">
-                <thead className="bg-bg-secondary">
-                  <tr>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">ID Course</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">Destination</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Commande du")}</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Frais de livraison")}</th>
-                    <th className="px-lg py-md font-label text-xs uppercase tracking-wider text-text-secondary">{tx("Statut")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-default">
-                  {recent.map((o) => (
-                    <tr key={o.id} className="transition-colors hover:bg-bg-secondary">
-                      <td className="px-lg py-md font-bold text-primary">{tokRef(o.id)}</td>
-                      <td className="px-lg py-md">
-                        <p className="text-sm font-medium">{o.landmark?.nom ?? '—'}</p>
-                        <p className="text-xs text-text-secondary">{o.description_lieu || `${articlesCount(o)} article(s)`}</p>
+            <>
+              <div className="hidden overflow-x-auto rounded-[14px] border border-border-default bg-bg-card shadow-sm lg:block">
+                <table className="w-full border-collapse text-left">
+                  <thead className="bg-bg-secondary">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-text-secondary">ID Course</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx('Client / Destination')}</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx('Heure')}</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx('Montant')}</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-text-secondary">{tx('Statut')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-default">
+                    {recent.map((order) => (
+                      <tr key={order.id} className="transition-colors hover:bg-bg-secondary">
+                        <td className="px-6 py-4 font-bold text-primary">{tokRef(order.id)}</td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-medium text-text-main">{pointLabel(order)}</p>
+                          <p className="text-xs text-text-secondary">{order.description_lieu || destination(order)}</p>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-text-main">{heureCourte(order.created_at)}</td>
+                        <td className="px-6 py-4 font-price text-sm text-text-main">{fmtFcfa(order.frais_livraison)}</td>
+                        <td className="px-6 py-4">
+                          <span className="badge badge-available uppercase">{statutLabel(order.statut)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-primary/20 bg-primary-tint">
+                      <td colSpan={3} className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-text-main">
+                        {tx('Total affiché')}
                       </td>
-                      <td className="px-lg py-md text-sm">{dateHeure(o.created_at)}</td>
-                      <td className="px-lg py-md font-price text-sm">{fmtFcfa(o.frais_livraison)}</td>
-                      <td className="px-lg py-md">
-                        <span className="rounded-full bg-success-light px-sm py-1 text-[10px] font-bold uppercase text-success">
-                          {statutLabel(o.statut)}
-                        </span>
+                      <td colSpan={2} className="px-6 py-4 font-price text-lg text-primary">
+                        {fmtFcfa(recentTotal)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div className="overflow-hidden rounded-[14px] border border-border-default bg-bg-card shadow-sm lg:hidden">
+                {recent.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between gap-3 border-b border-gray-100 p-3 last:border-b-0">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-light text-success">
+                        <FaIcon name="check" className="text-xs" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-bold text-text-main">{tokRef(order.id)}</p>
+                        <p className="text-[11px] text-text-secondary">
+                          {tx('Livré à')} {heureCourte(order.updated_at || order.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-text-main">{fmtFcfa(order.frais_livraison)}</p>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between bg-bg-secondary p-4">
+                  <p className="text-xs font-medium uppercase text-text-secondary">{tx('Total affiché')}</p>
+                  <p className="font-price text-lg text-primary">{fmtFcfa(recentTotal)}</p>
+                </div>
+              </div>
+            </>
           )}
         </section>
       </div>

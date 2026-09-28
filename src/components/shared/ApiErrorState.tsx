@@ -1,5 +1,5 @@
 import EmptyState from './EmptyState';
-import MIcon from './MIcon';
+import FaIcon from './FaIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -18,7 +18,7 @@ export default function ApiErrorState({ title, message, onRetry, className }: Ap
   useLanguage();
   return (
     <EmptyState
-      icon={<MIcon name="cloud_off" className="text-4xl text-primary" />}
+      icon={<FaIcon name="cloud_off" className="text-4xl text-primary" />}
       title={title}
       description={message}
       action={
