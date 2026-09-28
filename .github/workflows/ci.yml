@@ -1,8 +1,8 @@
 name: Intégration continue
 
-# Ce qui est vérifié à chaque poussée et à chaque demande de fusion :
-# types, suite de tests, build de production. Aucun de ces trois points ne doit
-# pouvoir casser silencieusement sur `main`.
+# Ce qui est vérifié à chaque poussée sur `main` ou `test`, et à chaque demande de fusion :
+# types, suite de tests, build de production. Aucun de ces trois points ne doit pouvoir
+# casser silencieusement sur une branche suivie.
 
 on:
   push:
