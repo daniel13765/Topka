@@ -168,6 +168,35 @@ export const etaMinutes = (km: number | null): number | null =>
 export const fmtKm = (km: number | null): string =>
   km == null || !Number.isFinite(km) ? '—' : `${km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`;
 
+/** Durée réelle entre deux horodatages (création de la commande → livraison), en minutes. */
+export function dureeMinutes(from?: string | null, to?: string | null): number | null {
+  if (!from || !to) return null;
+  const a = Date.parse(from);
+  const b = Date.parse(to);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return null;
+  return Math.max(1, Math.round((b - a) / 60_000));
+}
+
+/** « 18 min » — libellé de la maquette ; tiret quand l'horodatage de livraison manque. */
+export const fmtDuree = (min: number | null): string => (min == null ? '—' : `${min} min`);
+
+/**
+ * Recherche une commande livrée dans GET /livreur/history (20 par page, sans `updated_at`).
+ * Borné à `maxPages` : le récapitulatif est consulté juste après la course, la commande est
+ * donc dans les premières pages ; au-delà on renvoie null plutôt que de pager tout l'historique.
+ */
+export async function fetchDeliveredOrder(orderId: number, maxPages = 3): Promise<LivreurOrder | null> {
+  for (let page = 1; page <= maxPages; page++) {
+    const res: any = await livreurApi.getHistory(page);
+    const found = listOf(res)
+      .map(unwrapOrder)
+      .find((o) => Number(o.id) === Number(orderId));
+    if (found) return found;
+    if (page >= Number(res?.meta?.last_page ?? 1)) break;
+  }
+  return null;
+}
+
 /** Profil du livreur (GET /profile) : disponibilité réelle et zone assignée. */
 export interface LivreurProfile {
   id?: number;

@@ -605,9 +605,32 @@
   animation: tokpa-pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
+/* --------------------------------------------------------------------------
+   RECAP DE FIN DE COURSE — validation du badge « Course terminée » (maquette
+   r_capitulatif_de_fin_de_course_tokpa) : pastille qui apparaît, cartes qui montent.
+   -------------------------------------------------------------------------- */
+@keyframes tokpa-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.tokpa-pop {
+  animation: tokpa-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tokpa-rise {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.tokpa-rise {
+  animation: tokpa-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tokpa-sheet,
   .tokpa-route,
+  .tokpa-pop,
+  .tokpa-rise,
   .tokpa-pulse-ring::after {
     animation: none;
   }

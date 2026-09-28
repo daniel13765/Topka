@@ -12,6 +12,9 @@ import {
   etaMinutes,
   fetchLandmarkGeo,
   forgetLandmarkGeo,
+  fetchDeliveredOrder,
+  fmtDuree,
+  dureeMinutes,
   fmtKm,
   haversineKm,
   URBAN_SPEED_KMH,
@@ -120,5 +123,32 @@ describe('course active : distance et ETA réelles', () => {
 
     expect(await fetchLandmarkGeo()).toBe(first); // cache : un seul appel réseau
     expect(catalogApi.getZones).toHaveBeenCalledTimes(1);
+  });
+});
+describe('récapitulatif de fin de course', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calcule la durée réelle entre création et livraison', () => {
+    expect(dureeMinutes('2026-09-28T14:30:00+00:00', '2026-09-28T14:48:00+00:00')).toBe(18);
+    expect(dureeMinutes('2026-09-28T14:30:00+00:00', null)).toBeNull();
+    expect(dureeMinutes('2026-09-28T14:48:00+00:00', '2026-09-28T14:30:00+00:00')).toBeNull(); // horodatage incohérent
+    expect(fmtDuree(18)).toBe('18 min');
+    expect(fmtDuree(null)).toBe('—');
+  });
+
+  it('relit la commande livrée dans l’historique sans pager au-delà du nécessaire', async () => {
+    vi.mocked(livreurApi.getHistory)
+      .mockResolvedValueOnce({ data: [{ id: 9 }, { id: 7 }], meta: { last_page: 3, total: 60 } })
+      .mockResolvedValueOnce({ data: [{ id: 5 }], meta: { last_page: 3, total: 60 } });
+    await expect(fetchDeliveredOrder(5)).resolves.toMatchObject({ id: 5 });
+    expect(livreurApi.getHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('s’arrête à la dernière page et renvoie null quand la commande est absente', async () => {
+    vi.mocked(livreurApi.getHistory).mockResolvedValue({ data: [{ id: 3 }], meta: { last_page: 1, total: 1 } });
+    await expect(fetchDeliveredOrder(999)).resolves.toBeNull();
+    expect(livreurApi.getHistory).toHaveBeenCalledTimes(1);
   });
 });
