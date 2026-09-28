@@ -48,7 +48,26 @@ VITE_REVERB_APP_ID=tokpa
 VITE_GOOGLE_MAPS_API_KEY=
 ```
 
-Les clés privées ne doivent jamais être commitée dans GitHub.
+Les clés privées ne doivent jamais être commitées dans GitHub : `.env.local` est ignoré, seul
+`.env.example` porte les noms de variables.
+
+### Cartes (Google Maps)
+
+`VITE_GOOGLE_MAPS_API_KEY` active l’API JavaScript Google Maps sur les deux cartes du parcours
+livreur (suivi de course et « Zone & position d’intervention » des réglages) ainsi que sur le suivi
+client, qui partagent le même composant. Comportement volontaire :
+
+- clé absente → les cartes rendent Leaflet + tuiles OpenStreetMap, avec une puce
+  « Google Maps non configuré — repli OpenStreetMap » ; aucune requête Google n’est émise ;
+- clé présente mais SDK injoignable (réseau, clé refusée, temporisation de 8 s) → même repli, plus un
+  bouton « Réessayer » ; le chargement n’est jamais relancé en boucle ;
+- la clé n’est lue qu’ici (`src/utils/googleMaps.ts`) et n’apparaît dans aucun fichier du dépôt.
+
+Côté Google Cloud : activer **Maps JavaScript API** (facturation ouverte), restreindre la clé par
+référent HTTP vers votre domaine. Aucun itinéraire n’est demandé : le backend ne sert que des points
+(`zones.polygone_geo`, `points_repere.latitude/longitude`, `POST /livreur/position`), la trace reste
+donc une liaison droite entre ces points réels. Ce dépôt n’utilise ni Directions API ni Geocoding API,
+ faute de champ d’adresse exploitable pour un livreur dans l’API.
 
 ## Vérifications
 

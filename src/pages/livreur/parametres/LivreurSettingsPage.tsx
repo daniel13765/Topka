@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import LivreurLayout from '../../../components/layout/livreur/LivreurLayout';
 import FaIcon from '../../../components/shared/FaIcon';
+import { CarteZoneGoogle } from './CarteZoneGoogle';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import LangToggle from '../../../components/shared/LangToggle';
@@ -481,6 +482,9 @@ export default function LivreurSettingsPage() {
                       </button>
                     </div>
                   </form>
+
+                  {/* Zone & position d'intervention — Google Maps (repli OSM sans clé) */}
+                  <CarteZoneGoogle zoneId={profile.zoneId} zoneNom={profile.zone} />
                 </section>
 
                 {/* Carte 2 : Véhicule & Conformité */}

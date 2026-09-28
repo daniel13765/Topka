@@ -1,6 +1,7 @@
 import { authApi, catalogApi, livreurApi } from '../../services/api';
 import { uiLang } from '../../i18n/tx';
 import { listOf, unwrap } from '../../services/api/unwrap';
+import { normaliserPolygone } from '../../utils/googleMaps';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -141,6 +142,84 @@ export async function fetchLandmarkGeo(force = false): Promise<Map<number, Landm
   return value;
 }
 
+/* ---------------------------------------------------------------------------
+   Zone d'intervention : géométrie (polygone + repères) servie par `GET /zones`.
+   --------------------------------------------------------------------------- */
+
+export interface RepereZone {
+  id: number;
+  nom: string;
+  lat: number;
+  lng: number;
+}
+
+export interface ZoneGeo {
+  id: number;
+  nom: string;
+  /** Anneaux déjà normalisés en `[lat, lng]` (le backend écrit du GeoJSON `[lng, lat]`). */
+  polygone: [number, number][][];
+  reperes: RepereZone[];
+}
+
+let zonesGeoCache: { at: number; value: ZoneGeo[] } | null = null;
+
+/** Charge toutes les zones avec leur géométrie. Tolère une réponse plate ou enveloppée. */
+export async function fetchZonesGeo(force = false): Promise<ZoneGeo[]> {
+  if (!force && zonesGeoCache && Date.now() - zonesGeoCache.at < ZONE_TTL_MS) return zonesGeoCache.value;
+  const brut = listOf(unwrap(await catalogApi.getZones())) as any[];
+  const value: ZoneGeo[] = [];
+  for (const zone of brut) {
+    const id = Number(zone?.id);
+    if (!Number.isFinite(id)) continue;
+    const reperes: RepereZone[] = [];
+    for (const lm of (zone?.points_repere ?? []) as any[]) {
+      const lmId = Number(lm?.id);
+      const lat = Number(lm?.latitude);
+      const lng = Number(lm?.longitude);
+      if (!Number.isFinite(lmId) || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      if (Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) continue;
+      reperes.push({ id: lmId, nom: String(lm?.nom ?? '—'), lat, lng });
+    }
+    value.push({ id, nom: String(zone?.nom ?? '—'), polygone: normaliserPolygone(zone?.polygone_geo), reperes });
+  }
+  zonesGeoCache = { at: Date.now(), value };
+  return value;
+}
+
+export function forgetZonesGeo() {
+  zonesGeoCache = null;
+}
+
+/** `zone_id` est tantôt sur le modèle (`livreurs.zone_id`), tantôt dans la relation chargée. */
+export function resoudreZoneId(profil: any): number | null {
+  const candidat = profil?.zone_id ?? profil?.zone?.id;
+  const n = Number(candidat);
+  return candidat == null || candidat === '' || !Number.isFinite(n) || n <= 0 ? null : n;
+}
+
+/**
+ * Retrouve la zone du compte : d'abord par `zone_id`, puis par nom normalisé (casse et accents
+ * ignorés) car la ressource `profile` n'expose parfois que `zone.nom`.
+ */
+export function zoneCorrespond(zones: ZoneGeo[], zoneId: number | null, nomZone: string | null): ZoneGeo | null {
+  if (zoneId != null) {
+    const parId = zones.find((z) => z.id === zoneId);
+    if (parId) return parId;
+  }
+  const cible = normaliserNom(nomZone);
+  if (!cible) return null;
+  return zones.find((z) => normaliserNom(z.nom) === cible) ?? null;
+}
+
+export function normaliserNom(valeur: string | null | undefined): string {
+  return (valeur ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function forgetLandmarkGeo() {
   geoCache = null;
 }
@@ -276,6 +355,11 @@ export interface LivreurProfile {
   image_profil?: string | null;
   disponible: boolean | null;
   zone: string | null;
+  /**
+   * `livreurs.zone_id` (chargée avec le modèle) : seul un administrateur la change, mais elle permet
+   * de retrouver le polygone de la zone dans `GET /zones` sans dépendre de l'orthographe du nom.
+   */
+  zoneId: number | null;
   /** `users.statut` : 'actif' | 'inactif' | 'suspendu' (Utilisateur::STATUT_*). */
   statut: string | null;
   /** `livreurs.id_vehicule` : simple FK — aucun endpoint ne permet de résoudre le véhicule. */
@@ -323,6 +407,7 @@ export async function fetchLivreurProfile(force = false): Promise<LivreurProfile
     image_profil: typeof u?.image_profil === 'string' && u.image_profil.trim() ? u.image_profil.trim() : null,
     disponible: profil?.disponibilite == null ? null : Boolean(profil.disponibilite),
     zone: profil?.zone?.nom ?? null,
+    zoneId: resoudreZoneId(profil),
     statut: typeof u?.statut === 'string' && u.statut.trim() ? u.statut.trim() : null,
     vehiculeId: Number.isFinite(Number(profil?.id_vehicule)) && profil?.id_vehicule != null ? Number(profil.id_vehicule) : null,
     documents: normaliserDocuments(profil?.documents),

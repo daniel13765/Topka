@@ -23,6 +23,20 @@ vi.mock('../src/context/LanguageContext', () => ({
 }));
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: ({ children }: { children: ReactNode }) => <a>{children}</a> }));
 vi.mock('react-hot-toast', () => ({ default: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
+// Leaflet lit `navigator` au chargement du module : sans ces bouchons, la simple import de la carte
+// ferait planter tout test rendu en node (renderToStaticMarkup). Les tuiles ne sont pas le sujet.
+vi.mock('leaflet', () => ({ default: { icon: (options: unknown) => options } }));
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }: { children: ReactNode }) => <div data-carte="osm">{children}</div>,
+  TileLayer: () => null,
+  Polyline: () => null,
+  Polygon: () => null,
+  Popup: ({ children }: { children: ReactNode }) => <div data-pave>{children}</div>,
+  Marker: ({ children, position }: { children: ReactNode; position: [number, number] }) => (
+    <div data-marqueur={position.join(',')}>{children}</div>
+  ),
+  useMap: () => ({ panTo: () => undefined }),
+}));
 vi.mock('../src/services/api', () => ({
   authApi: { getProfile: vi.fn(), updateProfile: vi.fn(), changePassword: vi.fn(), logout: vi.fn() },
   catalogApi: { getZones: vi.fn() },
@@ -30,6 +44,8 @@ vi.mock('../src/services/api', () => ({
 }));
 
 import LivreurSettingsPage from '../src/pages/livreur/parametres/LivreurSettingsPage';
+import { Carte } from '../src/components/maps/Carte';
+import { CarteZoneGoogle } from '../src/pages/livreur/parametres/CarteZoneGoogle';
 
 describe('écran Paramètres du livreur : amorçage', () => {
   it('affiche l’en-tête et l’état de chargement avant la réponse de /profile', () => {
@@ -43,4 +59,38 @@ describe('écran Paramètres du livreur : amorçage', () => {
     expect(html).toContain('aria-checked="false"');
     expect(html).toContain('Seul un administrateur peut activer ou désactiver un livreur.');
   });
+});
+
+describe('bloc « Zone & position d’intervention »', () => {
+  it('attend la géométrie de zone avant de dessiner quoi que ce soit', () => {
+    const html = renderToStaticMarkup(<CarteZoneGoogle zoneId={4} zoneNom="Dantokpa" />);
+    // le titre contient un « & » : React l'échappe, on teste donc la partie stable du libellé
+    expect(html).toContain('position d’intervention');
+    expect(html).toContain('Chargement de la carte de zone…');
+    expect(html).toContain('Me localiser');
+    // aucun marqueur fantôme : la carte n'est pas rendue pendant le chargement
+    expect(html).not.toContain('data-carte');
+  });
+
+  it('sans clé Google Maps, la carte bascule sur le repli OpenStreetMap et le dit', () => {
+    const html = renderToStaticMarkup(
+      <Carte
+        marqueurs={[
+          { role: 'depart', position: [6.3725, 2.4332], etiquette: 'Marché Dantokpa' },
+          { role: 'inconnu' as never, position: [0, 0], etiquette: 'À ignorer' },
+        ]}
+        trace={[
+          [6.3725, 2.4332],
+          [6.36, 2.42],
+        ]}
+        polygone={[[[6.355, 2.415], [6.375, 2.445], [6.36, 2.43]]]}
+      />,
+    );
+    expect(html).toContain('data-carte="osm"');
+    expect(html).toContain('data-marqueur="6.3725,2.4332"');
+    // le second marqueur est hors contrat (0,0) : il n'est pas posé
+    expect(html).not.toContain('À ignorer');
+    expect(html).toContain('Google Maps non configuré — repli OpenStreetMap');
+  });
+
 });
