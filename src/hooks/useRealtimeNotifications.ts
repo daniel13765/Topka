@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { windowEcho } from '../services/realtime/echo';
+import { currentRole } from '../routes/authGuard';
+import { idCommandeDunEvenement } from '../utils/realtimeEvents';
 
 export interface RealtimeRefreshEvent {
   scope: 'orders' | 'proposals' | 'notifications' | 'all';
@@ -43,8 +45,11 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
  *   - payment.confirmed      (modèle Payment : id, order_id, montant)
  *   - delivery.assigned      (modèle Commande : id, livreur_id)
  *
- * Toasts bilingues + émission d'événements de rafraîchissement pour les pages
- * (orders, négociations, notifications) via `subscribeRealtimeRefresh`.
+ * Toasts bilingues (tournés selon le rôle de la session : `currentRole()`) + émission d'événements
+ * de rafraîchissement pour les pages (orders, négociations, notifications) via
+ * `subscribeRealtimeRefresh`. C'est ce bus qui alimente le tableau de bord, la course active,
+ * l'historique et la messagerie du livreur : une affectation arrive sur `notifications.{id}`,
+ * `delivery.assigned` y est diffusé par le backend.
  */
 export function useRealtimeNotifications(sessionKey: number): void {
   const { isFr } = useLanguage();
@@ -63,14 +68,26 @@ export function useRealtimeNotifications(sessionKey: number): void {
 
     const channel = echo.private(`notifications.${user.id}`);
 
+    // Un même événement part vers le canal du client et vers celui du livreur : le vocabulaire
+    // doit suivre le rôle, sinon un livreur lit « un livreur a été assigné à votre commande ».
+    const pourLivreur = currentRole() === 'livreur';
+
     const onStatusChanged = (data: { order_id: number; statut: string; previous: string }) => {
       const label = STATUT_LABELS[data.statut];
-      toast(
-        isFrRef.current
-          ? `Commande #${data.order_id} : ${label?.fr ?? data.statut}`
-          : `Order #${data.order_id}: ${label?.en ?? data.statut}`,
-      );
-      emitRealtimeRefresh({ scope: 'orders', payload: data });
+      const numero = idCommandeDunEvenement(data) ?? data.order_id;
+      const suffixe = numero ? (pourLivreur ? ` #TOK-${numero}` : ` #${numero}`) : '';
+      const sujet = pourLivreur
+        ? isFrRef.current
+          ? `Course${suffixe}`
+          : `Run${suffixe}`
+        : isFrRef.current
+          ? `Commande${suffixe}`
+          : `Order${suffixe}`;
+      toast(`${sujet} : ${label ? (isFrRef.current ? label.fr : label.en) : data.statut}`);
+      emitRealtimeRefresh({
+        scope: 'orders',
+        payload: { ...data, order_id: numero ?? undefined },
+      });
       emitRealtimeRefresh({ scope: 'notifications' });
     };
 
@@ -103,17 +120,29 @@ export function useRealtimeNotifications(sessionKey: number): void {
     };
 
     const onDeliveryAssigned = (data: { id?: number }) => {
-      toast(
-        isFrRef.current
-          ? data.id
-            ? `Un livreur a été assigné à votre commande #${data.id}`
+      // DeliveryAssigned::broadcastOn() vise notifications.{livreur_id} ET notifications.{user_id} ;
+      // l'événement n'a pas de broadcastWith(), le payload est donc le modèle Commande cru.
+      const numero = idCommandeDunEvenement(data);
+      const texte = pourLivreur
+        ? isFrRef.current
+          ? numero
+            ? `Nouvelle course attribuée : #TOK-${numero}`
+            : 'Nouvelle course attribuée'
+          : numero
+            ? `New run assigned: #TOK-${numero}`
+            : 'New run assigned'
+        : isFrRef.current
+          ? numero
+            ? `Un livreur a été assigné à votre commande #${numero}`
             : 'Un livreur a été assigné à votre commande'
-          : data.id
-            ? `A rider was assigned to order #${data.id}`
-            : 'A rider was assigned to your order',
-        { icon: '🛵' },
-      );
-      emitRealtimeRefresh({ scope: 'orders', payload: data });
+          : numero
+            ? `A rider was assigned to order #${numero}`
+            : 'A rider was assigned to your order';
+      toast(texte, { icon: '🛵', id: pourLivreur ? 'tokpa-assignation' : undefined });
+      emitRealtimeRefresh({
+        scope: 'orders',
+        payload: { ...data, order_id: numero ?? undefined },
+      });
       emitRealtimeRefresh({ scope: 'notifications' });
     };
 

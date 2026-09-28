@@ -8,6 +8,7 @@ import EmptyState from '../../../components/shared/EmptyState';
 import { chatApi } from '../../../services/api';
 import { listenPrivate } from '../../../services/realtime/echo';
 import { alertApiError } from '../../../utils/apiError';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { heureCourte } from '../../../services/api/unwrap';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
@@ -114,6 +115,10 @@ export default function LivreurMessagingPage() {
   useEffect(() => {
     void chargerListe();
   }, [chargerListe]);
+
+  // La conversation naît de l'affectation d'une course (ManagerAssignmentController::firstOrCreate) :
+  // `delivery.assigned` doit donc faire réapparaître la liste, sinon le livreur attend un F5.
+  useEffect(() => subscribeRealtimeRefresh(['orders'], () => void chargerListe()), [chargerListe]);
 
   /* ---------------------------- messages du fil actif ---------------------------- */
   const chargerFil = useCallback(

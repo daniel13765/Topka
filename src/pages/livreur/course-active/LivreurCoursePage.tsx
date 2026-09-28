@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -11,6 +11,9 @@ import EmptyState from '../../../components/shared/EmptyState';
 import { livreurApi } from '../../../services/api';
 import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
+import { listenPrivate } from '../../../services/realtime/echo';
+import { idCommandeDunEvenement } from '../../../utils/realtimeEvents';
 import { currentUserName } from '../../../routes/authGuard';
 import {
   dateHeure,
@@ -90,6 +93,36 @@ export default function LivreurCoursePage() {
         : (deliveries.find((o) => o.statut === 'en_livraison') ?? deliveries[0])) ?? null)
     : null;
   const enLivraison = order?.statut === 'en_livraison';
+
+  // Relecture discrète : pas d'effacement de l'écran (la carte et le GPS en cours ne doivent pas
+  // se figer) ; seule la liste des courses est remplacée quand le bus temps réel parle.
+  const rechargerDiscrètement = useCallback(() => {
+    fetchDeliveries()
+      .then(setDeliveries)
+      .catch(() => {
+        /* silencieux : l'écran affiche déjà l'état chargé */
+      });
+  }, []);
+
+  // `delivery.assigned` (nouvelle course pendant qu'on est sur l'écran) passe par le bridge global.
+  useEffect(() => subscribeRealtimeRefresh(['orders'], () => rechargerDiscrètement()), [rechargerDiscrètement]);
+
+  // Un administrateur peut retourner une statut (`PATCH /admin/orders/{order}/status` →
+  // OrderStatusChanged sur `tracking.{orderId}`, canal dont le livreur est membre d'après
+  // routes/channels.php). Sans cet abonnement, la course resterait « en livraison » à l'écran.
+  useEffect(() => {
+    if (!order) return;
+    const orderId = order.id;
+    const { stop } = listenPrivate(`tracking.${orderId}`, 'order.status.changed', (payload) => {
+      if (idCommandeDunEvenement(payload) !== orderId) return;
+      const statut = (payload as { statut?: string })?.statut;
+      rechargerDiscrètement();
+      if (statut === 'annule') {
+        toast.error(tx('Cette course vient d’être annulée par l’administration.'), { id: 'livreur-course-annulee' });
+      }
+    });
+    return stop;
+  }, [order, rechargerDiscrètement]);
 
   // GPS réel partagé pendant la livraison uniquement (F-14) ; aucune position simulée.
   useEffect(() => {

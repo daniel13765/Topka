@@ -9,6 +9,7 @@ import EmptyState from '../../../components/shared/EmptyState';
 import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { currentUserName } from '../../../routes/authGuard';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import {
   articlesCount,
   comparaisonSemaines,
@@ -73,6 +74,21 @@ export default function LivreurHistoryPage() {
   const [selected, setSelected] = useState<LivreurOrder | null>(null);
   const [saving, setSaving] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Fin de course ou annulation administrative : les cumuls, la pastille « ± % » et la ligne du
+  // jour changent. `fetchAllHistory()` relit les pages, on remplace `data` d'un bloc pour éviter
+  // le flash du squelette (le chargeur initial, lui, remet bien `data` à null).
+  useEffect(
+    () =>
+      subscribeRealtimeRefresh(['orders'], () => {
+        fetchAllHistory()
+          .then((res) => setData(res))
+          .catch(() => {
+            /* silencieux : l'état affiché reste valide, le bouton Réessayer existe */
+          });
+      }),
+    [],
+  );
 
   useEffect(() => {
     let alive = true;

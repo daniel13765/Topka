@@ -1,4 +1,13 @@
 export const EN: Record<string, string> = {
+  "Point de retrait": "Pickup point",
+  "Étoiles": "Stars",
+  "Statut de disponibilité": "Availability status",
+  "Non disponible dans le profil": "Not available in the profile",
+  "article(s)": "item(s)",
+  "Client / Destination": "Customer / Destination",
+  "Total affiché": "Displayed total",
+  "Livré à": "Delivered at",
+  "Cette course vient d’être annulée par l’administration.": "This run was just cancelled by the administration.",
   "En stock": "In stock",
   "Volume d'Affaires": "Revenue",
   "Taux de Livraison": "Delivery rate",

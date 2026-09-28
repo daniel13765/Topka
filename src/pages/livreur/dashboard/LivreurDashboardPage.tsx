@@ -10,6 +10,7 @@ import { fmtFcfa, listOf } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
+import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
 import { tx } from '../../../i18n/tx';
 
 import {
@@ -107,6 +108,32 @@ export default function LivreurDashboardPage() {
       alive = false;
     };
   }, [reloadKey]);
+
+  // Le bridge global émet `orders` quand un manager affecte une course (delivery.assigned sur le
+  // canal notifications.{livreur}) : on recharge les compteurs sans vider l'écran, pour qu'aucun
+  // clignotement de squelette n'intervienne pendant qu'on décide d'accepter une course.
+  useEffect(
+    () =>
+      subscribeRealtimeRefresh(['orders'], () => {
+        fetchDeliveries()
+          .then(setDeliveries)
+          .catch(() => {
+            /* pas de toast ici : la prochaine action réaffichera l'erreur via reloadKey */
+          });
+        authApi
+          .getDashboard()
+          .then((data) => setDash({ commandes: Number(data?.commandes ?? 0), en_cours: Number(data?.en_cours ?? 0) }))
+          .catch(() => undefined);
+        livreurApi
+          .getHistory(1)
+          .then((response: { meta?: { total?: number } }) => {
+            setRecent(listOf(response).map(unwrapOrder).slice(0, 5));
+            setHistTotal(Number(response?.meta?.total ?? 0));
+          })
+          .catch(() => undefined);
+      }),
+    [],
+  );
 
   const active = deliveries?.find((order) => order.statut === 'en_livraison') ?? null;
   const pending = (deliveries ?? []).filter((order) => order.statut !== 'en_livraison');
