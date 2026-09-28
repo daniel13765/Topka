@@ -78,13 +78,15 @@ const STATUT_FLOW: Record<string, number> = {
  * - GET /api/orders/{id}           → statut, montant, livreur assigné (nom + téléphone réels)
  * - GET /api/orders/{id}/tracking  → position + distance restante
  * - Reverb tracking.{id}           → livreur.position.updated (hook useRiderLocation)
+ * - Aucune position inventée : sans WebSocket ni instantané GPS, l'écran le dit. Le mode démonstration
+ *   `?simu=1` (faux livreur animé sur un tracé de Cotonou) a été retiré.
  * - Reverb notifications.{userId}  → order.status.changed → rechargement du statut
  */
 export default function OrderTrackingPage() {
   const { isFr } = useLanguage();
   const { isAuthenticated, isLoading } = useAuthGuard('/connexion');
   const navigate = useNavigate();
-  const search = useSearch({ from: '/commandes/suivi' }) as unknown as { order?: string; simu?: string };
+  const search = useSearch({ from: '/commandes/suivi' });
 
   const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -198,7 +200,7 @@ export default function OrderTrackingPage() {
     });
   }, [isAuthenticated, selectedId, accessDenied]);
 
-  // Position GPS réelle (GET /orders/{id}/tracking → position) : priorité sur la simulation
+  // Position GPS réellement publiée par le backend (GET /orders/{id}/tracking → `position`)
   const realPosition = useMemo<[number, number] | null>(() => {
     const p = tracking?.position;
     if (!p) return null;
@@ -212,8 +214,6 @@ export default function OrderTrackingPage() {
     enabled: isAuthenticated && !!selectedId && !accessDenied,
     realPosition,
     destinationCoords: destCoords ?? undefined, // ETA vers la destination RÉELLE de la commande
-    allowSimulation: search.simu === '1', // démo opt-in uniquement : sans ça, aucune position inventée
-    simulatedSpeedMs: 2500,
   });
 
   const distanceKm = useMemo(() => {
@@ -363,9 +363,7 @@ export default function OrderTrackingPage() {
                       GPS: {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
                       {source === 'websocket'
                         ? ' (WebSocket Reverb)'
-                        : source === 'api'
-                          ? ' (GPS API /orders/{id}/tracking)'
-                          : ' (simulation ?simu=1)'}
+                        : ' (GPS API /orders/{id}/tracking)'}
                     </>
                   ) : isFr ? (
                     'Position du livreur non encore disponible'

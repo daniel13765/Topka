@@ -3,13 +3,16 @@ import { tx } from '../../../i18n/tx';
 import { Carte } from '../../maps/Carte';
 import type { MarqueurCarte } from '../../maps/carteTypes';
 
-// Coordonnées réelles du Bénin (Cotonou / Marché Dantokpa / Cadjehoun)
-export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332]; // Marché Dantokpa
-export const RIDER_COORDS: [number, number] = [6.367, 2.421]; // Boulevard St Michel
-export const CLIENT_COORDS: [number, number] = [6.362, 2.41]; // Destination Cadjehoun Cotonou
+/**
+ * Point de retrait du marché de Dantokpa : seul repère géographique codé en dur du projet, parce que
+ * c'est le lieu physique d'où partent les courses. Les anciennes coordonnées « position du livreur
+ * Jean Kouassi » et « destination Cadjehoun » de la maquette sont supprimées : sans le mode
+ * démonstration, plus rien ne les consommait, et la position affichée vient toujours de l'API.
+ */
+export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332];
 
 interface RealBeninMapProps {
-  /** Position GPS réelle du livreur (endpoint tracking / Reverb) — null = aucun marqueur livreur. */
+  /** Position GPS réelle du livreur (endpoint tracking / Reverb) — null = aucun marqueur, rien n'est dessiné. */
   riderCoords?: [number, number] | null;
   /** Nom réel du livreur (GET /orders/{id} → livreur.nom_complet). */
   riderName?: string;
