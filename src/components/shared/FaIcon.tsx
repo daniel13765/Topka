@@ -1,5 +1,5 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
   faArrowLeft,
   faArrowRight,
@@ -103,7 +103,7 @@ import {
   faMessage as faMessageIcon,
   faHourglassHalf,
   faTriangleExclamation,
-} from "@fortawesome/free-solid-svg-icons";
+} from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Icônes Font Awesome utilisées par TOKPa.
@@ -304,12 +304,5 @@ export default function FaIcon({
   className?: string;
   title?: string;
 }) {
-  return (
-    <FontAwesomeIcon
-      icon={icons[name] ?? faCircleQuestion}
-      className={className}
-      title={title}
-      aria-hidden={title ? undefined : true}
-    />
-  );
+  return <FontAwesomeIcon icon={icons[name] ?? faCircleQuestion} className={className} title={title} aria-hidden={title ? undefined : true} />;
 }

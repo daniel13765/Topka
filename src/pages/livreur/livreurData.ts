@@ -1,6 +1,6 @@
-import { authApi, catalogApi, livreurApi } from "../../services/api";
-import { uiLang } from "../../i18n/tx";
-import { listOf, unwrap } from "../../services/api/unwrap";
+import { authApi, catalogApi, livreurApi } from '../../services/api';
+import { uiLang } from '../../i18n/tx';
+import { listOf, unwrap } from '../../services/api/unwrap';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -36,53 +36,44 @@ export interface LivreurOrder {
 }
 
 /** OrderResource enveloppe chaque commande dans { success, message, data } (même en liste). */
-export const unwrapOrder = (r: any): LivreurOrder =>
-  (r?.data ?? r) as LivreurOrder;
+export const unwrapOrder = (r: any): LivreurOrder => (r?.data ?? r) as LivreurOrder;
 
 export const tokRef = (id: number | string) => `#TOK-${id}`;
 
 export const STATUT_LABEL: Record<string, string> = {
-  en_attente: "En attente",
-  en_preparation: "En préparation",
-  en_livraison: "En livraison",
-  livre: "Livré",
-  annule: "Annulé",
+  en_attente: 'En attente',
+  en_preparation: 'En préparation',
+  en_livraison: 'En livraison',
+  livre: 'Livré',
+  annule: 'Annulé',
 };
 
 const STATUT_LABEL_EN: Record<string, string> = {
-  en_attente: "Pending",
-  en_preparation: "Preparing",
-  en_livraison: "Out for delivery",
-  livre: "Delivered",
-  annule: "Cancelled",
+  en_attente: 'Pending',
+  en_preparation: 'Preparing',
+  en_livraison: 'Out for delivery',
+  livre: 'Delivered',
+  annule: 'Cancelled',
 };
 
 export const statutLabel = (s: string) =>
-  (uiLang() === "en" ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ??
-  STATUT_LABEL[s] ??
-  s;
+  (uiLang() === 'en' ? STATUT_LABEL_EN[s] : STATUT_LABEL[s]) ?? STATUT_LABEL[s] ?? s;
 
 /** Destination lisible : nom du point de repère + précision saisie par le client. */
 export const destination = (o: LivreurOrder) =>
-  [o.landmark?.nom, o.description_lieu].filter(Boolean).join(" — ") ||
-  (uiLang() === "en"
-    ? "Destination not provided"
-    : "Destination non renseignée");
+  [o.landmark?.nom, o.description_lieu].filter(Boolean).join(' — ') ||
+  (uiLang() === 'en' ? 'Destination not provided' : 'Destination non renseignée');
 
-export const articlesCount = (o: LivreurOrder) =>
-  (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
+export const articlesCount = (o: LivreurOrder) => (o.items ?? []).reduce((s, it) => s + Number(it.quantite ?? 0), 0);
 
 /** Date et heure « 25/09 · 14:20 » (date de la commande : l'API ne donne pas l'heure de livraison en liste). */
 export function dateHeure(iso?: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return '—';
   const d = new Date(iso);
-  return `${d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })} · ${d.toLocaleTimeString(
-    "fr-FR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  )}`;
+  return `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} · ${d.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
 }
 
 export async function fetchDeliveries(): Promise<LivreurOrder[]> {
@@ -99,8 +90,7 @@ export async function fetchAllHistory(
     const res: any = await livreurApi.getHistory(page);
     orders.push(...listOf(res).map(unwrapOrder));
     total = Number(res?.meta?.total ?? orders.length);
-    if (page >= Number(res?.meta?.last_page ?? 1))
-      return { orders, total, capped: false };
+    if (page >= Number(res?.meta?.last_page ?? 1)) return { orders, total, capped: false };
   }
   return { orders, total, capped: true };
 }
@@ -108,7 +98,7 @@ export async function fetchAllHistory(
 /** Zones (id → nom) via GET /zones (public). */
 export async function fetchZoneNames(): Promise<Map<number, string>> {
   const list = listOf(unwrap(await catalogApi.getZones()));
-  return new Map(list.map((z: any) => [Number(z.id), String(z.nom ?? "—")]));
+  return new Map(list.map((z: any) => [Number(z.id), String(z.nom ?? '—')]));
 }
 
 /**
@@ -128,15 +118,11 @@ export interface LandmarkGeo {
 const ZONE_TTL_MS = 10 * 60_000;
 let geoCache: { at: number; value: Map<number, LandmarkGeo> } | null = null;
 
-export async function fetchLandmarkGeo(
-  force = false,
-): Promise<Map<number, LandmarkGeo>> {
-  if (!force && geoCache && Date.now() - geoCache.at < ZONE_TTL_MS)
-    return geoCache.value;
+export async function fetchLandmarkGeo(force = false): Promise<Map<number, LandmarkGeo>> {
+  if (!force && geoCache && Date.now() - geoCache.at < ZONE_TTL_MS) return geoCache.value;
   const zones = listOf(unwrap(await catalogApi.getZones())) as any[];
   /** `Number(null)` vaut 0 : sans ce filtre, un repère sans coordonnées créerait un marqueur à (0,0). */
-  const toNum = (v: unknown) =>
-    v == null || v === "" ? Number.NaN : Number(v);
+  const toNum = (v: unknown) => (v == null || v === '' ? Number.NaN : Number(v));
   const value = new Map<number, LandmarkGeo>();
   for (const zone of zones) {
     const zoneName = zone?.nom ? String(zone.nom) : null;
@@ -144,15 +130,10 @@ export async function fetchLandmarkGeo(
       const id = toNum(lm?.id);
       const lat = toNum(lm?.latitude);
       const lng = toNum(lm?.longitude);
-      if (
-        !Number.isFinite(id) ||
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng)
-      )
-        continue;
+      if (!Number.isFinite(id) || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
       if (Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
       if (lat === 0 && lng === 0) continue; // « null island » = aucune géolocalisation enregistrée
-      value.set(id, { nom: String(lm?.nom ?? "—"), lat, lng, zone: zoneName });
+      value.set(id, { nom: String(lm?.nom ?? '—'), lat, lng, zone: zoneName });
     }
   }
   geoCache = { at: Date.now(), value };
@@ -164,17 +145,12 @@ export function forgetLandmarkGeo() {
 }
 
 /** Distance à vol d'oiseau (haversine) — même base que GPSTrackingService::estimatedDistanceKm côté back. */
-export function haversineKm(
-  from: [number, number],
-  to: [number, number],
-): number {
+export function haversineKm(from: [number, number], to: [number, number]): number {
   const R = 6371;
   const rad = (v: number) => (v * Math.PI) / 180;
   const dLat = rad(to[0] - from[0]);
   const dLng = rad(to[1] - from[1]);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(rad(from[0])) * Math.cos(rad(to[0])) * Math.sin(dLng / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(from[0])) * Math.cos(rad(to[0])) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
@@ -186,15 +162,11 @@ export function haversineKm(
 export const URBAN_SPEED_KMH = 20;
 
 export const etaMinutes = (km: number | null): number | null =>
-  km == null || !Number.isFinite(km) || km <= 0
-    ? null
-    : Math.max(1, Math.round((km / URBAN_SPEED_KMH) * 60));
+  km == null || !Number.isFinite(km) || km <= 0 ? null : Math.max(1, Math.round((km / URBAN_SPEED_KMH) * 60));
 
 /** « 3,4 km » (virgule française, comme la maquette) ; tiret si la donnée manque. */
 export const fmtKm = (km: number | null): string =>
-  km == null || !Number.isFinite(km)
-    ? "—"
-    : `${km.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km`;
+  km == null || !Number.isFinite(km) ? '—' : `${km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`;
 
 /** Profil du livreur (GET /profile) : disponibilité réelle et zone assignée. */
 export interface LivreurProfile {
@@ -210,11 +182,8 @@ export interface LivreurProfile {
 
 let profileCache: { at: number; value: LivreurProfile } | null = null;
 
-export async function fetchLivreurProfile(
-  force = false,
-): Promise<LivreurProfile> {
-  if (!force && profileCache && Date.now() - profileCache.at < 60_000)
-    return profileCache.value;
+export async function fetchLivreurProfile(force = false): Promise<LivreurProfile> {
+  if (!force && profileCache && Date.now() - profileCache.at < 60_000) return profileCache.value;
   const u: any = unwrap(await authApi.getProfile());
   const profil = u?.profil ?? {};
   const value: LivreurProfile = {
@@ -224,8 +193,7 @@ export async function fetchLivreurProfile(
     nom_complet: u?.nom_complet,
     email: u?.email,
     telephone: u?.telephone ?? null,
-    disponible:
-      profil?.disponibilite == null ? null : Boolean(profil.disponibilite),
+    disponible: profil?.disponibilite == null ? null : Boolean(profil.disponibilite),
     zone: profil?.zone?.nom ?? null,
   };
   profileCache = { at: Date.now(), value };
