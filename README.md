@@ -2,20 +2,21 @@
 
 Frontend React du marché numérique TOKPa, fusionné avec la base frontend `elfred434/etokpa` et adapté au dépôt principal `daniel13765/Topka`.
 
-Cette version conserve la direction visuelle TOKPa tout en intégrant l’architecture plus complète du dépôt Elfred : appels API Laravel, authentification Sanctum, TanStack Router, TanStack Query, Redux, Reverb, Leaflet, administration et tests métier.
+Cette version conserve la direction visuelle TOKPa tout en intégrant l’architecture plus complète du dépôt Elfred : appels API Laravel, authentification Sanctum, TanStack Router, Redux, Reverb, Leaflet, administration et tests.
 
 ## Stack
 
 - React 19 + Vite 8
 - TypeScript et JSX stricts
-- TanStack Router, Query, Table, Form et Virtual
-- Redux Toolkit
+- TanStack Router — chaque page est chargée à la demande (`lazy`), avec préchargement à l’intention
+- Redux Toolkit (panier, négociation)
 - Tailwind CSS 4
 - Axios pour l’API Laravel
 - Laravel Echo + Pusher pour Reverb
-- Leaflet / React Leaflet pour les cartes
-- Fontsource Inter, Material Symbols et Recharts
-- Vitest, Testing Library et MSW pour les tests
+- Leaflet / React Leaflet pour le repli cartographique, Google Maps quand une clé est fournie
+- jsPDF pour le reçu de course
+- Fontsource Inter et Material Symbols
+- Vitest (environnement `node`) : règles métier, rendu serveur des écrans, garde de découpage du bundle
 
 ## Installation et démarrage
 
@@ -72,12 +73,18 @@ donc une liaison droite entre ces points réels. Ce dépôt n’utilise ni Direc
 ## Vérifications
 
 ```bash
-npm run typecheck
-npm run build
-npm test -- --run
+npm run typecheck     # tsc --noEmit
+npm run test:ci       # vitest run (watch : npm test)
+npm run build         # vite build
 ```
 
-Le build Vite peut afficher un avertissement concernant la taille du bundle, notamment à cause de Material Symbols et des bibliothèques de tableaux/cartes.
+Ces trois commandes sont celles exécutées par le workflow `.github/workflows/ci.yml` (Node 22) à chaque
+poussée sur `main` et à chaque demande de fusion. Le workflow vérifie en plus que le dépôt ne contient
+ni lanceur Windows ni `dist/`, qu’aucune clé Google Maps n’y est commitée, et qu’après découpage aucun
+chunk JS ne dépasse 700 Ko. Le build de production s’y déroule sans avertissement.
+
+Les espaces client, manager, administrateur et livreur sont couverts par des tests de rendu : ils rendent
+chaque écran sans effet ni donnée, ce qui fige l’état d’attente et les libellés d’honnêteté (B‑16).
 
 ## Routes principales
 

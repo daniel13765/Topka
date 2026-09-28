@@ -1,0 +1,79 @@
+name: Intégration continue
+
+# Ce qui est vérifié à chaque poussée et à chaque demande de fusion :
+# types, suite de tests, build de production. Aucun de ces trois points ne doit
+# pouvoir casser silencieusement sur `main`.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    name: Types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js et le cache npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances exactement selon le verrouillage
+        run: npm ci
+
+      - name: Vérifier le périmètre du dépôt
+        run: |
+          interdits=$(git ls-files | grep -E '\.bat$|\.cmd$|^scripts/|^dist/|^node_modules/|^\.env\.local$|\.tsbuildinfo$' || true)
+          if [ -n "$interdits" ]; then
+            echo "Des fichiers n'ont rien à faire dans ce dépôt :" >&2
+            echo "$interdits" >&2
+            exit 1
+          fi
+          if git ls-files -z | xargs -0 grep -Il "AIza[0-9A-Za-z_-]\{30,\}" 2>/dev/null | grep -q .; then
+            echo "Une clé Google Maps semble commitée dans le dépôt." >&2
+            exit 1
+          fi
+
+      - name: Types
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test:ci
+
+      - name: Build de production
+        env:
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+        run: npm run build
+
+      - name: Vérifier le découpage du bundle
+        run: |
+          plus_lourd=$(ls -S dist/assets/*.js | head -1)
+          taille=$(( $(wc -c < "$plus_lourd") / 1024 ))
+          echo "Plus gros chunk JS : $(basename "$plus_lourd") — ${taille} Ko"
+          if [ "$taille" -gt 700 ]; then
+            echo "Un chunk dépasse 700 Ko : le découpage par page a régressé." >&2
+            exit 1
+          fi
+
+      - name: Conserver le build sept jours
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
