@@ -28,6 +28,7 @@ import {
   fetchDeliveries,
   fetchLivreurProfile,
   fetchZoneNames,
+  normaliserDocuments,
   forgetLivreurProfile,
   statutLabel,
   tokRef,
@@ -211,5 +212,64 @@ describe('historique : cumuls et comparatifs réels', () => {
     expect(lignes.find((l) => l.label === 'Frais de livraison')?.value).toMatch(/^1\s500 FCFA$/);
     expect(lignes.find((l) => l.label === 'Zone')?.value).toBe('Cadjehoun');
     expect(lignes.some((l) => /client|t[ée]l[ée]phone/i.test(l.label))).toBe(false);
+  });
+});
+
+describe('profil du livreur : champs réellement persistés', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    forgetLivreurProfile();
+  });
+
+  it('normalise les trois formes de `documents` sans inventer de clé', () => {
+    expect(normaliserDocuments(['Permis de conduire'])).toEqual([{ libelle: 'Permis de conduire' }]);
+    expect(
+      normaliserDocuments([
+        { nom: 'Assurance professionnelle Course', numero: 'NSIA-2291', statut: 'valide' },
+        { type: 'CNI', url: 'https://x/y.pdf', status: 'en_attente' },
+        { libelle: '' },
+        null,
+        3,
+      ]),
+    ).toEqual([
+      { libelle: 'Assurance professionnelle Course', valeur: 'NSIA-2291', statut: 'valide' },
+      { libelle: 'CNI', valeur: 'https://x/y.pdf', statut: 'en_attente' },
+    ]);
+    expect(normaliserDocuments(undefined)).toEqual([]);
+    expect(normaliserDocuments({ nom: 'Pas un tableau' })).toEqual([]);
+  });
+
+  it('expose image_profil, statut et id_vehicule, et vide ce que le back ne renvoie pas', async () => {
+    vi.mocked(authApi.getProfile).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          id: 12,
+          nom_complet: 'Jean Kouassi',
+          telephone: '97001234',
+          image_profil: '  https://cdn/x.png  ',
+          statut: 'actif',
+          profil: { disponibilite: 0, id_vehicule: 3, documents: ['Permis B'] },
+        },
+      },
+    });
+    expect(await fetchLivreurProfile()).toMatchObject({
+      id: 12,
+      image_profil: 'https://cdn/x.png',
+      disponible: false,
+      statut: 'actif',
+      vehiculeId: 3,
+      zone: null,
+      documents: [{ libelle: 'Permis B' }],
+    });
+
+    forgetLivreurProfile();
+    vi.mocked(authApi.getProfile).mockResolvedValue({ data: { data: { id: 12, image_profil: '   ' } } });
+    const nu = await fetchLivreurProfile();
+    expect(nu.image_profil).toBeNull();
+    expect(nu.statut).toBeNull();
+    expect(nu.vehiculeId).toBeNull();
+    expect(nu.disponible).toBeNull();
+    expect(nu.documents).toEqual([]);
   });
 });

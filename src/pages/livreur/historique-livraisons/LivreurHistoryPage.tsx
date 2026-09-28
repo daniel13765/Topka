@@ -699,7 +699,7 @@ export default function LivreurHistoryPage() {
                     const nom = await telechargerRecu(selected, { zone: zoneOf(selected), livreur: currentUserName() });
                     toast.success(tr(`Reçu ${nom} téléchargé.`, `Receipt ${nom} downloaded.`));
                   } catch {
-                    toast.error(tx('Le reçu na pas pu être généré sur cet appareil.'));
+                    toast.error(tx('Le reçu n’a pas pu être généré sur cet appareil.'));
                   } finally {
                     setSaving(false); // sinon le bouton reste bloqué sur « Génération… »
                   }

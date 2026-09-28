@@ -259,6 +259,13 @@ export async function fetchDeliveredOrder(orderId: number, maxPages = 3): Promis
 }
 
 /** Profil du livreur (GET /profile) : disponibilité réelle et zone assignée. */
+/** Pièce justificative du livreur (`livreurs.documents`, JSON libre côté backend). */
+export interface DocumentProfil {
+  libelle: string;
+  valeur?: string;
+  statut?: string;
+}
+
 export interface LivreurProfile {
   id?: number;
   nom?: string;
@@ -266,8 +273,38 @@ export interface LivreurProfile {
   nom_complet?: string;
   email?: string;
   telephone?: string | null;
+  image_profil?: string | null;
   disponible: boolean | null;
   zone: string | null;
+  /** `users.statut` : 'actif' | 'inactif' | 'suspendu' (Utilisateur::STATUT_*). */
+  statut: string | null;
+  /** `livreurs.id_vehicule` : simple FK — aucun endpoint ne permet de résoudre le véhicule. */
+  vehiculeId: number | null;
+  documents: DocumentProfil[];
+}
+
+/**
+ * `documents` est un JSON libre (le contrôleur accepte n'importe quel tableau) : on normalise les
+ * formes rencontrées (chaîne, objet nommé, objet générique) sans rien inventer d'autre.
+ */
+export function normaliserDocuments(raw: unknown): DocumentProfil[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((d): DocumentProfil | null => {
+      if (typeof d === 'string' && d.trim()) return { libelle: d.trim() };
+      if (!d || typeof d !== 'object') return null;
+      const o = d as Record<string, unknown>;
+      const libelle = [o.nom, o.libelle, o.type, o.name, o.document].find((v) => typeof v === 'string' && (v as string).trim());
+      if (typeof libelle !== 'string') return null;
+      const valeur = [o.numero, o.value, o.url, o.reference].find((v) => typeof v === 'string' && (v as string).trim());
+      const statut = [o.statut, o.status].find((v) => typeof v === 'string' && (v as string).trim());
+      return {
+        libelle: libelle.trim(),
+        ...(typeof valeur === 'string' ? { valeur: valeur.trim() } : {}),
+        ...(typeof statut === 'string' ? { statut: statut.trim() } : {}),
+      };
+    })
+    .filter((d): d is DocumentProfil => d !== null);
 }
 
 let profileCache: { at: number; value: LivreurProfile } | null = null;
@@ -283,8 +320,12 @@ export async function fetchLivreurProfile(force = false): Promise<LivreurProfile
     nom_complet: u?.nom_complet,
     email: u?.email,
     telephone: u?.telephone ?? null,
+    image_profil: typeof u?.image_profil === 'string' && u.image_profil.trim() ? u.image_profil.trim() : null,
     disponible: profil?.disponibilite == null ? null : Boolean(profil.disponibilite),
     zone: profil?.zone?.nom ?? null,
+    statut: typeof u?.statut === 'string' && u.statut.trim() ? u.statut.trim() : null,
+    vehiculeId: Number.isFinite(Number(profil?.id_vehicule)) && profil?.id_vehicule != null ? Number(profil.id_vehicule) : null,
+    documents: normaliserDocuments(profil?.documents),
   };
   profileCache = { at: Date.now(), value };
   return value;
