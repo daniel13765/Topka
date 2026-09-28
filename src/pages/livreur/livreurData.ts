@@ -80,19 +80,20 @@ export async function fetchDeliveries(): Promise<LivreurOrder[]> {
   return listOf(await livreurApi.getDeliveries()).map(unwrapOrder);
 }
 
-/** Historique complet (20 par page) : au plus `maxPages` pages, `capped` si la limite est atteinte. */
+/**
+ * Historique complet (20 par page) : au plus `maxPages` pages, `capped` si la limite est atteinte.
+ * La page 1 porte `meta.last_page` → les pages suivantes sont demandées en parallèle.
+ */
 export async function fetchAllHistory(
   maxPages = 25,
 ): Promise<{ orders: LivreurOrder[]; total: number; capped: boolean }> {
-  const orders: LivreurOrder[] = [];
-  let total = 0;
-  for (let page = 1; page <= maxPages; page++) {
-    const res: any = await livreurApi.getHistory(page);
-    orders.push(...listOf(res).map(unwrapOrder));
-    total = Number(res?.meta?.total ?? orders.length);
-    if (page >= Number(res?.meta?.last_page ?? 1)) return { orders, total, capped: false };
-  }
-  return { orders, total, capped: true };
+  const first: any = await livreurApi.getHistory(1);
+  const lastPage = Number(first?.meta?.last_page ?? 1);
+  const pages = Math.min(Math.max(lastPage, 1), maxPages);
+  const rest: any[] =
+    pages > 1 ? await Promise.all(Array.from({ length: pages - 1 }, (_, i) => livreurApi.getHistory(i + 2))) : [];
+  const orders = [first, ...rest].flatMap((res: any) => listOf(res).map(unwrapOrder));
+  return { orders, total: Number(first?.meta?.total ?? 0) || orders.length, capped: lastPage > maxPages };
 }
 
 /** Zones (id → nom) via GET /zones (public). */
@@ -167,6 +168,66 @@ export const etaMinutes = (km: number | null): number | null =>
 /** « 3,4 km » (virgule française, comme la maquette) ; tiret si la donnée manque. */
 export const fmtKm = (km: number | null): string =>
   km == null || !Number.isFinite(km) ? '—' : `${km.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`;
+
+/** Somme des frais réellement rattachés aux commandes (aucun autre gain n'est exposé au livreur). */
+export const sommeFrais = (orders: LivreurOrder[]): number =>
+  orders.reduce((s, o) => s + montantSur(o.frais_livraison), 0);
+
+/** Lundi 00:00 de la semaine contenant `ref` (semaine ISO, comme la maquette L → D). */
+export function debutSemaine(ref: Date = new Date()): Date {
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+/** Les montants backend peuvent arriver en chaîne ou absents : jamais un NaN qui annulerait un cumul. */
+const montantSur = (v: unknown): number => {
+  const n = Number(v ?? 0);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const memeJour = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+/** Frais de livraison jour par jour, lundi → dimanche, calculés sur les dates réelles des commandes. */
+export function revenusParJour(orders: LivreurOrder[], ref: Date = new Date()): { date: Date; total: number }[] {
+  const start = debutSemaine(ref);
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    const total = orders.reduce(
+      (s, o) => (o.created_at && memeJour(new Date(o.created_at), date) ? s + montantSur(o.frais_livraison) : s),
+      0,
+    );
+    return { date, total };
+  });
+}
+
+/**
+ * Comparatif semaine en cours / semaine précédente, en nombre de courses.
+ * `deltaPct` reste null quand la semaine précédente est vide : aucun pourcentage n'est inventé.
+ */
+export function comparaisonSemaines(
+  orders: LivreurOrder[],
+  ref: Date = new Date(),
+): { cetteSemaine: number; semainePrecedente: number; deltaPct: number | null } {
+  const start = debutSemaine(ref);
+  const prevStart = new Date(start);
+  prevStart.setDate(start.getDate() - 7);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  const between = (o: LivreurOrder, from: Date, to: Date) => {
+    if (!o.created_at) return false;
+    const d = new Date(o.created_at);
+    return d >= from && d < to;
+  };
+  const cetteSemaine = orders.filter((o) => between(o, start, end)).length;
+  const semainePrecedente = orders.filter((o) => between(o, prevStart, start)).length;
+  const deltaPct =
+    semainePrecedente > 0 ? Math.round(((cetteSemaine - semainePrecedente) / semainePrecedente) * 100) : null;
+  return { cetteSemaine, semainePrecedente, deltaPct };
+}
 
 /** Durée réelle entre deux horodatages (création de la commande → livraison), en minutes. */
 export function dureeMinutes(from?: string | null, to?: string | null): number | null {

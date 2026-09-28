@@ -7,8 +7,13 @@ vi.mock('../src/services/api', () => ({
 }));
 
 import { authApi, catalogApi, livreurApi } from '../src/services/api';
+import { lignesRecu } from '../src/pages/livreur/historique-livraisons/recuCourse';
 import {
   articlesCount,
+  comparaisonSemaines,
+  debutSemaine,
+  revenusParJour,
+  sommeFrais,
   etaMinutes,
   fetchLandmarkGeo,
   forgetLandmarkGeo,
@@ -150,5 +155,61 @@ describe('récapitulatif de fin de course', () => {
     vi.mocked(livreurApi.getHistory).mockResolvedValue({ data: [{ id: 3 }], meta: { last_page: 1, total: 1 } });
     await expect(fetchDeliveredOrder(999)).resolves.toBeNull();
     expect(livreurApi.getHistory).toHaveBeenCalledTimes(1);
+  });
+});
+/** Course livrée minimale, dates en heure locale (sans Z) pour éviter tout décalage de fuseau. */
+function course(id: number, jour: Date, frais: number) {
+  const iso = `${jour.getFullYear()}-${String(jour.getMonth() + 1).padStart(2, '0')}-${String(jour.getDate()).padStart(2, '0')}T10:00:00`;
+  return { id, montant_total: frais * 2, frais_livraison: frais, statut: 'livre', created_at: iso } as never;
+}
+
+describe('historique : cumuls et comparatifs réels', () => {
+  const ref = new Date(2026, 8, 30, 15, 0, 0); // mercredi
+  const lundi = debutSemaine(ref);
+  const jour = (offset: number) => {
+    const d = new Date(lundi);
+    d.setDate(lundi.getDate() + offset);
+    return d;
+  };
+
+  it('ancre la semaine sur un lundi à minuit', () => {
+    expect(lundi.getDay()).toBe(1);
+    expect(lundi.getHours()).toBe(0);
+    expect(lundi.getMinutes()).toBe(0);
+  });
+
+  it('additionne uniquement les frais réellement présents', () => {
+    expect(sommeFrais([course(1, jour(0), 1200), course(2, jour(2), 800), { id: 3, montant_total: 0, frais_livraison: NaN as never, statut: 'livre' } as never])).toBe(2000);
+  });
+
+  it('répartit les frais du lundi au dimanche et exclut la semaine précédente', () => {
+    const jours = revenusParJour([course(1, jour(0), 1200), course(2, jour(2), 800), course(3, jour(-7), 500)], ref);
+    expect(jours).toHaveLength(7);
+    expect(jours[0].total).toBe(1200);
+    expect(jours[2].total).toBe(800);
+    expect(jours[6].total).toBe(0);
+    expect(jours.reduce((s, j) => s + j.total, 0)).toBe(2000); // les 500 de la semaine -1 ne comptent pas
+  });
+
+  it('compare les semaines et refuse tout pourcentage sans base', () => {
+    // jour(-3) = vendredi de la semaine précédente : 2 courses cette semaine, 1 avant
+    const r = comparaisonSemaines([course(1, jour(0), 100), course(2, jour(2), 100), course(3, jour(-3), 100)], ref);
+    expect(r).toEqual({ cetteSemaine: 2, semainePrecedente: 1, deltaPct: 100 });
+
+    // aucune base la semaine passée : pas de pourcentage affirmé
+    expect(comparaisonSemaines([course(1, jour(0), 100)], ref)).toEqual({ cetteSemaine: 1, semainePrecedente: 0, deltaPct: null });
+
+    const r2 = comparaisonSemaines([course(1, jour(0), 100), course(2, jour(-7), 100)], ref);
+    expect(r2).toEqual({ cetteSemaine: 1, semainePrecedente: 1, deltaPct: 0 });
+
+    const r3 = comparaisonSemaines([course(1, jour(0), 100), course(2, jour(1), 100), course(3, jour(-7), 100)], ref);
+    expect(r3.deltaPct).toBe(100);
+  });
+
+  it('compose un reçu sans ligne client inventée', () => {
+    const lignes = lignesRecu(course(12, jour(0), 1500) as never, { zone: 'Cadjehoun', livreur: 'Jean' });
+    expect(lignes.find((l) => l.label === 'Frais de livraison')?.value).toMatch(/^1\s500 FCFA$/);
+    expect(lignes.find((l) => l.label === 'Zone')?.value).toBe('Cadjehoun');
+    expect(lignes.some((l) => /client|t[ée]l[ée]phone/i.test(l.label))).toBe(false);
   });
 });

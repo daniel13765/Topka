@@ -626,10 +626,19 @@
   animation: tokpa-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes tokpa-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.tokpa-fade {
+  animation: tokpa-fade 0.15s ease both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tokpa-sheet,
   .tokpa-route,
   .tokpa-pop,
+  .tokpa-fade,
   .tokpa-rise,
   .tokpa-pulse-ring::after {
     animation: none;
