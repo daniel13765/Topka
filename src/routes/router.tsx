@@ -1,51 +1,83 @@
+import { Suspense, lazy, type ComponentType } from 'react';
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
 import { guardRoute, redirectOnSessionExpired } from './authGuard';
-import ConnexionPage from '../pages/auth/ConnexionPage';
-import InscriptionPage from '../pages/auth/InscriptionPage';
-import Verification2faPage from '../pages/auth/Verification2faPage';
-import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
-import NotificationsPage from '../pages/client/notifications/NotificationsPage';
-import HomePage from '../pages/client/accueil/HomePage';
-import CatalogPage from '../pages/client/catalogue/CatalogPage';
-import ProductPage from '../pages/client/fiche-produit/ProductPage';
-import CartPage from '../pages/client/panier/CartPage';
-import ConfirmationPage from '../pages/client/confirmation-commande/ConfirmationPage';
-import ProfilePage from '../pages/client/profil/ProfilePage';
-import NegotiationsPage from '../pages/client/negociations/NegotiationsPage';
-import OrderTrackingPage from '../pages/client/commandes/OrderTrackingPage';
-import OrdersListPage from '../pages/client/commandes/OrdersListPage';
-import MessagingPage from '../pages/client/messagerie/MessagingPage';
-import AdminCatalogPage from '../pages/admin/AdminCatalogPage';
-import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
-import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
-import AdminZonesPage from '../pages/admin/AdminZonesPage';
-import AdminUsersPage from '../pages/admin/AdminUsersPage';
-import AdminUserDetailPage from '../pages/admin/AdminUserDetailPage';
-import AdminLivreursPage from '../pages/admin/AdminLivreursPage';
-import AdminValidationsPage from '../pages/admin/AdminValidationsPage';
-import AdminLogsPage from '../pages/admin/AdminLogsPage';
-import AdminParametresPage from '../pages/admin/AdminParametresPage';
-import AdminSystemePage from '../pages/admin/AdminSystemePage';
-import AdminBddPage from '../pages/admin/AdminBddPage';
-import AdminClesApiPage from '../pages/admin/AdminClesApiPage';
-import AdminSecuritePage from '../pages/admin/AdminSecuritePage';
-import ManagerDashboardPage from '../pages/manager/ManagerDashboardPage';
-import ManagerOrdersPage from '../pages/manager/ManagerOrdersPage';
-import ManagerEquipePage from '../pages/manager/ManagerEquipePage';
-import ManagerStatsPage from '../pages/manager/ManagerStatsPage';
-import ManagerLitigesPage from '../pages/manager/ManagerLitigesPage';
-import ManagerParametresPage from '../pages/manager/ManagerParametresPage';
-import ManagerZonePrefsPage from '../pages/manager/ManagerZonePrefsPage';
-import LivreurDashboardPage from '../pages/livreur/dashboard/LivreurDashboardPage';
-import LivreurCoursePage from '../pages/livreur/course-active/LivreurCoursePage';
-import LivreurRecapPage from '../pages/livreur/recap-fin-course/LivreurRecapPage';
-import LivreurHistoryPage from '../pages/livreur/historique-livraisons/LivreurHistoryPage';
-import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage';
-import LivreurMessagingPage from '../pages/livreur/messagerie/LivreurMessagingPage';
+import LoadingState from '../components/shared/LoadingState';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
+
+/**
+ * Découpage du bundle : une page = un chunk.
+ *
+ * Toutes les pages étaient importées en statique, donc embarquées dans le bundle initial (1 845 Ko
+ * minifiés, 496 Ko gzip) : un client qui ouvre `/` téléchargeait les écrans super-admin, le leaflet
+ * de suivi, le PDF de reçu et les 6 écrans livreur. Avec `lazy()`, Vite crée un chunk par page et
+ * `defaultPreload: 'intent'` (ci-dessous) précharge dès le survol du lien : le premier affichage est
+ * plus rapide, la navigation ne le devient pas.
+ *
+ * Le point d'entrée ne garde que ce qui sert à chaque rendu : le garde de session, la coquille
+ * (SystemBridge, Toaster), l'état de chargement et la page 404 (elle doit s'afficher sans requête).
+ *
+ * Règle verrouillée par `tests/bundle-splitting.test.ts` : aucun `import … from '../pages/…'` en dur
+ * dans ce fichier, sauf NotFoundPage.
+ */
+type CompositeurDePage = () => Promise<{ default: ComponentType<Record<string, never>> }>;
+function page(chargement: CompositeurDePage) {
+  return lazy(chargement);
+}
+
+// —— Authentification ---------------------------------------------------------------------------
+const ConnexionPage = page(() => import('../pages/auth/ConnexionPage'));
+const InscriptionPage = page(() => import('../pages/auth/InscriptionPage'));
+const Verification2faPage = page(() => import('../pages/auth/Verification2faPage'));
+const ResetPasswordPage = page(() => import('../pages/auth/ResetPasswordPage'));
+
+// —— Espace client ------------------------------------------------------------------------------
+const HomePage = page(() => import('../pages/client/accueil/HomePage'));
+const CatalogPage = page(() => import('../pages/client/catalogue/CatalogPage'));
+const ProductPage = page(() => import('../pages/client/fiche-produit/ProductPage'));
+const CartPage = page(() => import('../pages/client/panier/CartPage'));
+const ConfirmationPage = page(() => import('../pages/client/confirmation-commande/ConfirmationPage'));
+const ProfilePage = page(() => import('../pages/client/profil/ProfilePage'));
+const NegotiationsPage = page(() => import('../pages/client/negociations/NegotiationsPage'));
+const OrderTrackingPage = page(() => import('../pages/client/commandes/OrderTrackingPage'));
+const OrdersListPage = page(() => import('../pages/client/commandes/OrdersListPage'));
+const MessagingPage = page(() => import('../pages/client/messagerie/MessagingPage'));
+const NotificationsPage = page(() => import('../pages/client/notifications/NotificationsPage'));
+
+// —— Espace livreur (sprint en cours : 6 écrans) -------------------------------------------------
+const LivreurDashboardPage = page(() => import('../pages/livreur/dashboard/LivreurDashboardPage'));
+const LivreurCoursePage = page(() => import('../pages/livreur/course-active/LivreurCoursePage'));
+const LivreurRecapPage = page(() => import('../pages/livreur/recap-fin-course/LivreurRecapPage'));
+const LivreurHistoryPage = page(() => import('../pages/livreur/historique-livraisons/LivreurHistoryPage'));
+const LivreurSettingsPage = page(() => import('../pages/livreur/parametres/LivreurSettingsPage'));
+const LivreurMessagingPage = page(() => import('../pages/livreur/messagerie/LivreurMessagingPage'));
+
+// —— Espace manager -----------------------------------------------------------------------------
+const ManagerDashboardPage = page(() => import('../pages/manager/ManagerDashboardPage'));
+const ManagerOrdersPage = page(() => import('../pages/manager/ManagerOrdersPage'));
+const ManagerEquipePage = page(() => import('../pages/manager/ManagerEquipePage'));
+const ManagerStatsPage = page(() => import('../pages/manager/ManagerStatsPage'));
+const ManagerLitigesPage = page(() => import('../pages/manager/ManagerLitigesPage'));
+const ManagerParametresPage = page(() => import('../pages/manager/ManagerParametresPage'));
+const ManagerZonePrefsPage = page(() => import('../pages/manager/ManagerZonePrefsPage'));
+
+// —— Espace administrateur ----------------------------------------------------------------------
+const AdminDashboardPage = page(() => import('../pages/admin/AdminDashboardPage'));
+const AdminOrdersPage = page(() => import('../pages/admin/AdminOrdersPage'));
+const AdminCatalogPage = page(() => import('../pages/admin/AdminCatalogPage'));
+const AdminCategoriesPage = page(() => import('../pages/admin/AdminCategoriesPage'));
+const AdminZonesPage = page(() => import('../pages/admin/AdminZonesPage'));
+const AdminUsersPage = page(() => import('../pages/admin/AdminUsersPage'));
+const AdminUserDetailPage = page(() => import('../pages/admin/AdminUserDetailPage'));
+const AdminLivreursPage = page(() => import('../pages/admin/AdminLivreursPage'));
+const AdminValidationsPage = page(() => import('../pages/admin/AdminValidationsPage'));
+const AdminLogsPage = page(() => import('../pages/admin/AdminLogsPage'));
+const AdminParametresPage = page(() => import('../pages/admin/AdminParametresPage'));
+const AdminSystemePage = page(() => import('../pages/admin/AdminSystemePage'));
+const AdminBddPage = page(() => import('../pages/admin/AdminBddPage'));
+const AdminClesApiPage = page(() => import('../pages/admin/AdminClesApiPage'));
+const AdminSecuritePage = page(() => import('../pages/admin/AdminSecuritePage'));
 
 const rootRoute = createRootRoute({
   // Garde globale (authGuard.ts) : non connecté → /connexion sur toute page hors accueil et écrans
@@ -54,7 +86,10 @@ const rootRoute = createRootRoute({
   component: () => (
     <>
       <SystemBridge />
-      <Outlet />
+      {/* Seule frontière de suspension : elle couvre toutes les pages `lazy()` ci-dessus. */}
+      <Suspense fallback={<LoadingState />}>
+        <Outlet />
+      </Suspense>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -163,7 +198,6 @@ const livreurRecapRoute = createRoute({ getParentRoute: () => rootRoute, path: '
 const livreurHistoriqueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/historique', component: LivreurHistoryPage });
 const livreurMessagerieRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/messagerie', component: LivreurMessagingPage });
 const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/parametres', component: LivreurSettingsPage });
-// Route temporaire de review des composants (retirée à la fin du Sprint 1).
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -211,7 +245,12 @@ const routeTree = rootRoute.addChildren([
   livreurParametresRoute,
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  // Préchargement au survol/focus du lien : le chunk de la page est déjà là quand on clique.
+  defaultPreload: 'intent',
+  defaultPreloadStaleTime: 30_000,
+});
 
 // Session perdue en cours de navigation (401 de l'API) → /connexion hors pages publiques (authGuard.ts).
 redirectOnSessionExpired(router);
