@@ -43,6 +43,7 @@ import LivreurCoursePage from '../pages/livreur/course-active/LivreurCoursePage'
 import LivreurRecapPage from '../pages/livreur/recap-fin-course/LivreurRecapPage';
 import LivreurHistoryPage from '../pages/livreur/historique-livraisons/LivreurHistoryPage';
 import LivreurSettingsPage from '../pages/livreur/parametres/LivreurSettingsPage';
+import LivreurMessagingPage from '../pages/livreur/messagerie/LivreurMessagingPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
 
@@ -160,6 +161,7 @@ const livreurRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livr
 const livreurCourseRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/course', component: LivreurCoursePage, validateSearch: commandeSearch });
 const livreurRecapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/recapitulatif', component: LivreurRecapPage, validateSearch: commandeSearch });
 const livreurHistoriqueRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/historique', component: LivreurHistoryPage });
+const livreurMessagerieRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/messagerie', component: LivreurMessagingPage });
 const livreurParametresRoute = createRoute({ getParentRoute: () => rootRoute, path: '/livreur/parametres', component: LivreurSettingsPage });
 // Route temporaire de review des composants (retirée à la fin du Sprint 1).
 
@@ -205,6 +207,7 @@ const routeTree = rootRoute.addChildren([
   livreurCourseRoute,
   livreurRecapRoute,
   livreurHistoriqueRoute,
+  livreurMessagerieRoute,
   livreurParametresRoute,
 ]);
 

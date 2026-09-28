@@ -11,7 +11,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
 const NAV: {
-  to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livreur/parametres';
+  to: '/livreur' | '/livreur/course' | '/livreur/historique' | '/livreur/messagerie' | '/livreur/parametres';
   icon: string;
   label: string;
   short: string;
@@ -20,6 +20,7 @@ const NAV: {
   { to: '/livreur', icon: 'dashboard', label: 'Tableau de bord', short: 'Tableau de bord', exact: true },
   { to: '/livreur/course', icon: 'local_shipping', label: 'Livraisons en cours', short: 'Livraison en cours', exact: false },
   { to: '/livreur/historique', icon: 'history', label: 'Historique', short: 'Historique', exact: false },
+  { to: '/livreur/messagerie', icon: 'chat_bubble', label: 'Messagerie', short: 'Messagerie', exact: false },
   { to: '/livreur/parametres', icon: 'settings', label: 'Paramètres', short: 'Paramètres', exact: false },
 ];
 
