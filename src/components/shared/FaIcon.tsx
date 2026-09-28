@@ -1,5 +1,5 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faArrowLeft,
   faArrowRight,
@@ -93,6 +93,7 @@ import {
   faShield,
   faCircleHalfStroke,
   faList,
+  faLocationCrosshairs,
   faListCheck,
   faMagnifyingGlassMinus,
   faMagnifyingGlassPlus,
@@ -102,7 +103,7 @@ import {
   faMessage as faMessageIcon,
   faHourglassHalf,
   faTriangleExclamation,
-} from '@fortawesome/free-solid-svg-icons';
+} from "@fortawesome/free-solid-svg-icons";
 
 /**
  * Icônes Font Awesome utilisées par TOKPa.
@@ -208,6 +209,7 @@ const icons: Record<string, IconDefinition> = {
   mail: faEnvelope,
   manage_accounts: faUserGear,
   map: faMap,
+  my_location: faLocationCrosshairs,
   mark_email_read: faEnvelope,
   memory: faMicrochip,
   mode_comment: faComment,
@@ -235,6 +237,8 @@ const icons: Record<string, IconDefinition> = {
   queue: faList,
   rainy: faUmbrella,
   receipt_long: faReceipt,
+  report: faTriangleExclamation,
+  route: faRoute,
   refresh: faArrowsRotate,
   remove: faXmark,
   reorder: faList,
@@ -300,5 +304,12 @@ export default function FaIcon({
   className?: string;
   title?: string;
 }) {
-  return <FontAwesomeIcon icon={icons[name] ?? faCircleQuestion} className={className} title={title} aria-hidden={title ? undefined : true} />;
+  return (
+    <FontAwesomeIcon
+      icon={icons[name] ?? faCircleQuestion}
+      className={className}
+      title={title}
+      aria-hidden={title ? undefined : true}
+    />
+  );
 }

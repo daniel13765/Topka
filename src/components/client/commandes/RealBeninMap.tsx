@@ -1,19 +1,25 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
-
+import { useEffect } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useLanguage } from "../../../context/LanguageContext";
+import { tx } from "../../../i18n/tx";
 
 // Coordonnées réelles du Bénin (Cotonou / Marché Dantokpa / Cadjehoun)
 export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332]; // Marché Dantokpa
 export const RIDER_COORDS: [number, number] = [6.367, 2.421]; // Position actuelle Livreur Jean Kouassi sur Boulevard St Michel
-export const CLIENT_COORDS: [number, number] = [6.362, 2.410]; // Destination Cadjehoun Cotonou
+export const CLIENT_COORDS: [number, number] = [6.362, 2.41]; // Destination Cadjehoun Cotonou
 
 // Icônes personnalisées Leaflet Tokpa avec Material Symbols
 const sellerIcon = L.divIcon({
-  className: 'custom-leaflet-marker',
+  className: "custom-leaflet-marker",
   html: `
     <div style="background-color: #f97316; width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
       <span class="material-symbols-outlined" style="color: white; font-size: 20px;">store</span>
@@ -24,7 +30,7 @@ const sellerIcon = L.divIcon({
 });
 
 const riderIcon = L.divIcon({
-  className: 'custom-leaflet-marker-rider',
+  className: "custom-leaflet-marker-rider",
   html: `
     <div style="background-color: #10B981; width: 46px; height: 46px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(16,185,129,0.6); animation: pulse 1.8s infinite;">
       <span class="material-symbols-outlined" style="color: white; font-size: 24px;">motorcycle</span>
@@ -35,7 +41,7 @@ const riderIcon = L.divIcon({
 });
 
 const clientIcon = L.divIcon({
-  className: 'custom-leaflet-marker-client',
+  className: "custom-leaflet-marker-client",
   html: `
     <div style="background-color: #3B82F6; width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
       <span class="material-symbols-outlined" style="color: white; font-size: 20px;">location_on</span>
@@ -74,7 +80,8 @@ export default function RealBeninMap({
   onRecenterRider,
 }: RealBeninMapProps) {
   useLanguage();
-  const mapCenter: [number, number] = riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
+  const mapCenter: [number, number] =
+    riderCoords ?? destinationCoords ?? DANTOKPA_COORDS;
   const routePath: [number, number][] = [
     DANTOKPA_COORDS,
     ...(riderCoords ? [riderCoords] : []),
@@ -88,7 +95,7 @@ export default function RealBeninMap({
         zoom={14}
         scrollWheelZoom={false}
         className="w-full h-full rounded-b-none"
-        style={{ height: '100%', width: '100%', minHeight: '450px' }}
+        style={{ height: "100%", width: "100%", minHeight: "450px" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -98,14 +105,25 @@ export default function RealBeninMap({
         <MapRecenterController center={mapCenter} />
 
         {/* Tracé de l’itinéraire dynamique Cotonou */}
-        <Polyline positions={routePath} color="#f97316" weight={5} opacity={0.85} dashArray="10, 8" />
+        <Polyline
+          positions={routePath}
+          color="#f97316"
+          weight={5}
+          opacity={0.85}
+          dashArray="10, 8"
+          className="tokpa-route"
+        />
 
         {/* Marqueur Marché Dantokpa */}
         <Marker position={DANTOKPA_COORDS} icon={sellerIcon}>
           <Popup>
             <div className="text-center font-sans p-1">
-              <strong className="block text-primary font-bold">{tx("Marché Dantokpa")}</strong>
-              <span className="text-xs text-gray-600">{tx("Cotonou, Bénin")}</span>
+              <strong className="block text-primary font-bold">
+                {tx("Marché Dantokpa")}
+              </strong>
+              <span className="text-xs text-gray-600">
+                {tx("Cotonou, Bénin")}
+              </span>
             </div>
           </Popup>
         </Marker>
@@ -115,8 +133,12 @@ export default function RealBeninMap({
           <Marker position={riderCoords} icon={riderIcon}>
             <Popup>
               <div className="text-center font-sans p-1">
-                <strong className="block text-success-dark font-bold">{riderName ? `${riderName} (Livreur)` : 'Livreur TOKPa'}</strong>
-                <span className="text-xs text-gray-600">GPS : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}</span>
+                <strong className="block text-success-dark font-bold">
+                  {riderName ? `${riderName} (Livreur)` : "Livreur TOKPa"}
+                </strong>
+                <span className="text-xs text-gray-600">
+                  GPS : {riderCoords[0].toFixed(4)}, {riderCoords[1].toFixed(4)}
+                </span>
               </div>
             </Popup>
           </Marker>
@@ -127,8 +149,12 @@ export default function RealBeninMap({
           <Marker position={destinationCoords} icon={clientIcon}>
             <Popup>
               <div className="text-center font-sans p-1">
-                <strong className="block text-info-dark font-bold">{destinationLabel || 'Point de livraison'}</strong>
-                <span className="text-xs text-gray-600">{tx("Destination de la commande")}</span>
+                <strong className="block text-info-dark font-bold">
+                  {destinationLabel || "Point de livraison"}
+                </strong>
+                <span className="text-xs text-gray-600">
+                  {tx("Destination de la commande")}
+                </span>
               </div>
             </Popup>
           </Marker>
@@ -142,7 +168,9 @@ export default function RealBeninMap({
         title={tx("Recentrer sur la position temps réel du livreur")}
         className="absolute bottom-6 right-6 z-[400] w-12 h-12 bg-white rounded-full flex items-center justify-center border border-border-default shadow-xl hover:bg-bg-secondary transition-transform active:scale-95 cursor-pointer"
       >
-        <span className="material-symbols-outlined text-text-main">my_location</span>
+        <span className="material-symbols-outlined text-text-main">
+          my_location
+        </span>
       </button>
     </div>
   );

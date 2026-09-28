@@ -567,3 +567,48 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
   }
 }
+
+/* --------------------------------------------------------------------------
+   COURSE ACTIVE (espace livreur) — maquettes « course_active_tokpa » (mobile :
+   plein écran + panneau qui monte sur la carte) et « course_active_tokpa_desktop »
+   (carte 70 % / détails 30 %) + itinéraire animé (dash qui avance, comme la maquette).
+   -------------------------------------------------------------------------- */
+@keyframes tokpa-sheet-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.tokpa-sheet {
+  animation: tokpa-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tokpa-route-dash {
+  to { stroke-dashoffset: -72; }
+}
+/* Le dash vient de l'option Leaflet `dashArray` ; seule l'avance du tracé est animée ici. */
+.tokpa-route {
+  animation: tokpa-route-dash 3s linear infinite;
+}
+
+@keyframes tokpa-pulse-ring {
+  0%        { transform: scale(0.5); opacity: 0.5; }
+  80%, 100% { transform: scale(1.6); opacity: 0; }
+}
+.tokpa-pulse-ring {
+  position: relative;
+}
+.tokpa-pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  background-color: var(--color-success);
+  animation: tokpa-pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tokpa-sheet,
+  .tokpa-route,
+  .tokpa-pulse-ring::after {
+    animation: none;
+  }
+}
