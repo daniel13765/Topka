@@ -6,7 +6,7 @@ name: Intégration continue
 
 on:
   push:
-    branches: [main]
+    branches: [main, test]
   pull_request:
   workflow_dispatch:
 
