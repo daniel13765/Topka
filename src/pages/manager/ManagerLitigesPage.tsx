@@ -5,7 +5,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 type Litige = {
   id: string; cde: string; motif: string; icon: string; categorie: string;

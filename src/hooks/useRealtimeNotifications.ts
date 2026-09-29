@@ -54,7 +54,11 @@ const STATUT_LABELS: Record<string, { fr: string; en: string }> = {
 export function useRealtimeNotifications(sessionKey: number): void {
   const { isFr } = useLanguage();
   const isFrRef = useRef(isFr);
-  isFrRef.current = isFr;
+  // Le motif « latest ref » s’entretient dans un effet : écrire un ref pendant le rendu est
+  // interdit (React 19), et les only callbacks qui le lisent s’exécutent après la peinture.
+  useEffect(() => {
+    isFrRef.current = isFr;
+  }, [isFr]);
 
   useEffect(() => {
     const token = localStorage.getItem('tokpa_token');

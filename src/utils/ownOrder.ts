@@ -8,7 +8,7 @@ import { ordersApi } from '../services/api';
  */
 export async function isOwnOrder(id: number): Promise<boolean> {
   let page = 1;
-  let last = 1;
+  let last: number;
   do {
     const res = await ordersApi.getOrders(page);
     const raw = (res?.data ?? res ?? []) as Array<Record<string, unknown> & { data?: { id?: number } }>;

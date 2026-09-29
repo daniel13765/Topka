@@ -15,6 +15,8 @@ export interface NegotiationItem {
   minPrice: number;
   /** Quantité proposée (backend `quantite`). */
   quantite?: number;
+  /** Commande née de l'offre acceptée (backend `commande.id` ou `order_id`) — sert à ouvrir le suivi. */
+  orderId?: number | string;
   /** Réponse/justification de l'admin (backend `admin_response`). */
   adminResponse?: string;
   status: NegotiationStatus;

@@ -46,7 +46,7 @@ function injectModalCss() {
 function build(script: string): Runtime {
   // Le script du design + une rampe d'invocation dans SON scope (eval local).
   // tx est injecté pour que les toasts / titres de modale suivent la langue.
-  // eslint-disable-next-line no-new-func
+   
   const factory = new Function(
     'tx',
     `${script}

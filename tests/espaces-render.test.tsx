@@ -17,11 +17,6 @@ import { store } from '../src/store';
  * avant la première réponse de l'API, donc les libellés d'attente et l'absence de donnée inventée.
  */
 // `vi.mock` est hoisté au-dessus des déclarations : la fabrique de bouchons doit être autonome.
-const NOMS_DE_GROUPES = [
-  'adminApi', 'authApi', 'cartApi', 'catalogApi', 'chatApi', 'landmarksApi',
-  'livreurApi', 'managerApi', 'negotiationApi', 'notificationsApi', 'ordersApi', 'paymentsApi',
-];
-
 vi.mock('../src/services/api', () => {
   const groupe = () =>
     new Proxy(

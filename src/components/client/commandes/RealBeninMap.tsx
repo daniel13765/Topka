@@ -9,7 +9,7 @@ import type { MarqueurCarte } from '../../maps/carteTypes';
  * Jean Kouassi » et « destination Cadjehoun » de la maquette sont supprimées : sans le mode
  * démonstration, plus rien ne les consommait, et la position affichée vient toujours de l'API.
  */
-export const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332];
+const DANTOKPA_COORDS: [number, number] = [6.3725, 2.4332];
 
 interface RealBeninMapProps {
   /** Position GPS réelle du livreur (endpoint tracking / Reverb) — null = aucun marqueur, rien n'est dessiné. */

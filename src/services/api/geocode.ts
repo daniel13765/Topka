@@ -13,7 +13,7 @@ export async function searchPlaces(q: string): Promise<GeoPlace[]> {
   if (!r.ok) throw new Error(`Recherche de lieu indisponible (HTTP ${r.status})`);
   const rows: unknown = await r.json();
   if (!Array.isArray(rows)) return [];
-  return (rows as any[])
+  return (rows as Array<Record<string, unknown>>)
     .map((p) => {
       const full = String(p.display_name ?? '');
       return {

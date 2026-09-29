@@ -74,12 +74,27 @@ donc une liaison droite entre ces points réels. Ce dépôt n’utilise ni Direc
 
 ```bash
 npm run typecheck     # tsc --noEmit
+npm run lint          # eslint 10, configuration plate `eslint.config.js`
 npm run test:ci       # vitest run (watch : npm test)
 npm run build         # vite build
 ```
 
-Ces trois commandes sont celles exécutées par le workflow `.github/workflows/ci.yml` (Node 22) à chaque
-poussée sur `main` et à chaque demande de fusion. Le workflow vérifie en plus que le dépôt ne contient
+### Dette de lint assumée
+
+`npm run lint` remonte **zéro erreur** et 159 avertissements non bloquants, tous justifiés dans
+`eslint.config.js` règle par règle :
+
+| Règle | Sites | Pourquoi en avertissement |
+| --- | --- | --- |
+| `@typescript-eslint/no-explicit-any` | 119 | Pages d'administration reprenant des formes de données du maquette sans schéma côté backend ; à typer écran par écran. |
+| `react-hooks/set-state-in-effect` | 36 | Lever un drapeau de chargement en début d'effet est le motif délibéré du projet (aucun éclat de contenu avant la réponse). |
+| `react-hooks/exhaustive-deps` | 4 | Effets de branchement SDK (Google Maps) et listes logiques volontairement bornées. |
+
+Un écran typé se valide avec `npm run lint -- --max-warnings=0` sur le dépôt entier, ou en
+remettant la règle en `error` pour le dossier concerné.
+
+Ces quatre commandes sont celles exécutées par le workflow `.github/workflows/ci.yml` (Node 22) à chaque
+poussée sur `main` ou `test` et à chaque demande de fusion. Le workflow vérifie en plus que le dépôt ne contient
 ni lanceur Windows ni `dist/`, qu’aucune clé Google Maps n’y est commitée, et qu’après découpage aucun
 chunk JS ne dépasse 700 Ko. Le build de production s’y déroule sans avertissement.
 

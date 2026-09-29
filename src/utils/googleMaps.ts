@@ -39,7 +39,9 @@ export interface SdkGoogle {
     Size: new (w: number, h: number) => unknown;
     SymbolPath: { CIRCLE: number; FORWARD_CLOSED_ARROW?: number };
     event: {
-      addListener: (instance: unknown, eventName: string, handler: (...args: any[]) => void) => { remove: () => void };
+      // Le SDK passe un événement `google.maps.*` que nous ne typons pas (aucune @types/google.maps dans
+      // le projet) : il entre en unknown, chaque gestionnaire le réduit au besoin.
+      addListener: (instance: unknown, eventName: string, handler: (...evenement: unknown[]) => void) => { remove: () => void };
       clearInstanceListeners: (instance: unknown) => void;
     };
     LatLngBounds: new (southWest: LatLngLiteral, northEast: LatLngLiteral) => {

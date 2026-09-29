@@ -67,7 +67,8 @@ export default function LivreurCoursePage() {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [gps, setGps] = useState<GpsState>('off');
   const [lastSent, setLastSent] = useState<number | null>(null);
-  const [, setTick] = useState(0);
+  /** Âge du dernier point partagé, entretenu par un minuteur : le rendu doit rester pur. */
+  const [secondesDepuisEnvoi, setSecondesDepuisEnvoi] = useState(0);
   const lastSentAt = useRef(0);
 
   useEffect(() => {
@@ -156,12 +157,18 @@ export default function LivreurCoursePage() {
       (e) => setGps(e.code === e.PERMISSION_DENIED ? 'denied' : 'unavailable'),
       { enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000 },
     );
-    const ticker = window.setInterval(() => setTick((t) => t + 1), 5_000); // « il y a X s »
     return () => {
       navigator.geolocation.clearWatch(watchId);
-      window.clearInterval(ticker);
     };
   }, [order?.id, enLivraison]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (lastSent == null) return;
+    const mesure = () => setSecondesDepuisEnvoi(Math.max(1, Math.round((Date.now() - lastSent) / 1000)));
+    mesure();
+    const minuteur = window.setInterval(mesure, 5_000);
+    return () => window.clearInterval(minuteur);
+  }, [lastSent]);
 
   const changeStatus = async (statut: 'en_livraison' | 'livre') => {
     if (!order) return;
@@ -206,7 +213,7 @@ export default function LivreurCoursePage() {
     ? ''
     : gps === 'on'
       ? lastSent
-        ? `Position partagée · il y a ${Math.max(1, Math.round((Date.now() - lastSent) / 1000))} s`
+        ? `Position partagée · il y a ${secondesDepuisEnvoi} s`
         : tx('Position GPS trouvée · envoi en cours')
       : gps === 'waiting'
         ? tx('Recherche de votre position GPS…')

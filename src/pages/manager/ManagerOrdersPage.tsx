@@ -60,7 +60,7 @@ export default function ManagerOrdersPage() {
       .getLivreurs()
       .then((r) => setLivreurs(listOf(unwrap(r))))
       .catch(() => setLivreurs([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [onglet]);
 
   const confirmerAssignation = async () => {

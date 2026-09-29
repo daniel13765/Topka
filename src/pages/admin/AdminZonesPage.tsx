@@ -492,7 +492,7 @@ export default function AdminZonesPage() {
       map?.off('click', onClick);
       if (map) clearTemp(map);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [modal]);
 
   // Aperçu vivant : la forme grandit avec les points (triangle → hexagone…)

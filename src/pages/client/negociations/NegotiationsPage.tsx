@@ -21,6 +21,29 @@ import { tx } from '../../../i18n/tx';
 type FilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
 
 /**
+ * Forme brute d'une proposition telle que renvoyée par `GET /negotiations` : le backend ne documente
+ * aucun schéma de réponse, on décrit donc seulement ce que la page lit, et le reste est ignoré.
+ */
+type PropositionBrute = {
+  id?: number | string;
+  product_id?: number | string;
+  quantite?: number | string;
+  prix_propose?: number | string;
+  admin_response?: string | null;
+  statut?: string | null;
+  created_at?: string | null;
+  order_id?: number | string | null;
+  commande?: { id?: number | string } | null;
+  product?: {
+    id?: number | string;
+    nom?: string;
+    image_url?: string;
+    prix?: number | string;
+    prix_minimum?: number | string;
+  } | null;
+};
+
+/**
  * Page dédiée Mes Négociations — Synchronisée 100% avec l'API Backend Laravel GET /api/budget-proposals
  */
 export default function NegotiationsPage() {
@@ -41,7 +64,7 @@ export default function NegotiationsPage() {
       .then((res) => {
         const proposalsList = res?.data || (Array.isArray(res) ? res : []);
         if (Array.isArray(proposalsList)) {
-          const mapped: NegotiationItem[] = proposalsList.map((p: any) => ({
+          const mapped: NegotiationItem[] = (proposalsList as PropositionBrute[]).map((p) => ({
             id: String(p.id),
             productId: String(p.product_id ?? p.product?.id ?? ''),
             productName: p.product?.nom || `Produit #${p.product_id ?? p.product?.id ?? '?'}`,
@@ -51,7 +74,7 @@ export default function NegotiationsPage() {
             proposedPrice: Number(p.prix_propose),
             minPrice: Number(p.product?.prix_minimum) || Number(p.prix_propose),
             quantite: Number(p.quantite) || 1,
-            orderId: p.commande?.id ?? p.order_id,
+            orderId: p.commande?.id ?? p.order_id ?? undefined,
             adminResponse: p.admin_response || undefined,
             status:
               p.statut === 'accepte' ? 'accepted'
@@ -107,8 +130,8 @@ export default function NegotiationsPage() {
   });
 
   const handleAddToCart = (neg: NegotiationItem) => {
-    if (neg.status === 'accepted' && (neg as any).orderId) {
-      navigate({ to: '/commandes', search: { detail: String((neg as any).orderId) } });
+    if (neg.status === 'accepted' && neg.orderId != null) {
+      navigate({ to: '/commandes', search: { detail: String(neg.orderId) } });
       return;
     }
     const product: Product = {
