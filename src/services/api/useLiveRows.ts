@@ -4,15 +4,19 @@ import { invokeDesign } from '../../utils/designRuntime';
 import { unwrap, listOf } from './unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * useLiveRows — charge des données RÉELLES pour les pages design Stitch :
  * remplit les tableaux (copie conforme conservée) sans fausse donnée.
  * Erreurs API verbeuses (phase dev) + états chargement / vide.
+ *
+ * `T` est la forme de ligne réellement consommée par l'écran (voir src/types/adminRows.ts) : sans
+ * paramètre, le hook distribuait des `any` et chaque pageannotait ses callbacks en `any` à la chaîne.
  */
-export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = []) {
-  const [rows, setRows] = useState<any[]>([]);
+export function useLiveRows<T extends object = Record<string, unknown>>(
+  fetcher: () => Promise<unknown>,
+  deps: unknown[] = [],
+) {
+  const [rows, setRows] = useState<T[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +24,7 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
     setLoading(true);
     setErr(null);
     fetcher()
-      .then((r) => setRows(listOf(unwrap(r))))
+      .then((r) => setRows(listOf(unwrap(r)) as T[]))
       .catch((e) => setErr(formatApiError(extractApiError(e))))
       .finally(() => setLoading(false));
   };
@@ -30,7 +34,7 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
     setLoading(true);
     setErr(null);
     fetcher()
-      .then((r) => alive && setRows(listOf(unwrap(r))))
+      .then((r) => alive && setRows(listOf(unwrap(r)) as T[]))
       .catch((e) => alive && setErr(formatApiError(extractApiError(e))))
       .finally(() => alive && setLoading(false));
     return () => {
@@ -44,7 +48,7 @@ export function useLiveRows(fetcher: () => Promise<unknown>, deps: unknown[] = [
 
 /** Nom de zone depuis un objet ZoneResource ou une chaîne (évite le crash « object as React child »). */
 export const zoneNom = (z: unknown): string =>
-  z && typeof z === 'object' ? String((z as any).nom ?? '—') : String((z as any) ?? '—') || '—';
+  z && typeof z === 'object' ? String((z as { nom?: unknown }).nom ?? '—') : String(z ?? '—') || '—';
 
 /** Échappe une valeur pour un handler `data-onclick="fn('…')"` du design. */
 export const escArg = (s: unknown): string =>

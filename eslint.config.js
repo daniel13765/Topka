@@ -35,20 +35,14 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
       ],
-      // Dette documentée, volontairement en avertissement et non en erreur : les pages d'administration
-      // portent les formes de données du maquette (geojson, payloads d'intégration) qui n'ont pas encore
-      // de types correspondant au backend. 127 sites, tous dans src/pages/admin. Le but est de les typer
-      // écran par écran, pas de masquer la règle — elle reste en erreur partout ailleurs.
+      // Règle rétablie en erreur partout : les 119 sites de src/pages/admin ont été typés (voir
+      // src/types/adminRows.ts, miroir tolérant des ressources lues écran par écran).
       '@typescript-eslint/no-explicit-any': 'error',
       // Même arbitrage : lever un drapeau de chargement en début d'effet est le motif délibéré du projet
       // (aucun éclat de contenu avant la réponse). 36 sites. À revoir quand les écrans de données
       // passeront sur un cache de requêtes.
       'react-hooks/set-state-in-effect': 'warn',
     },
-  },
-  {
-    files: ['src/pages/admin/**/*.tsx'],
-    rules: { '@typescript-eslint/no-explicit-any': 'warn' },
   },
   {
     // Les bouchons de tests décrivent exprès des réponses d'API sans forme fixe.

@@ -6,6 +6,7 @@ import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
 import MIcon from '../../components/shared/MIcon';
+import type { DashboardRow, OrderRow, ProductRow, ZoneRow } from '../../types/adminRows';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -53,8 +54,8 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate(
  */
 export default function AdminDashboardPage() {
   useLanguage();
-  const { rows: commandes, err, loading } = useLiveRows(() => adminApi.getOrders({ page: 1 }));
-  const [dash, setDash] = useState<any>(null);
+  const { rows: commandes, err, loading } = useLiveRows<OrderRow>(() => adminApi.getOrders({ page: 1 }));
+  const [dash, setDash] = useState<DashboardRow | null>(null);
   const SC = (s: string) => (s || '').includes('attente') ? 'bg-amber-light text-amber-text'
     : (s || '').includes('annul') || (s || '').includes('litige') ? 'bg-error-container text-error'
     : (s || '').includes('term') || (s || '').includes('livr') ? 'bg-success-light text-success'
@@ -64,17 +65,21 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     adminApi
       .getZones()
-      .then((r: any) => setZoneNames(new Map(listOf(unwrap(r)).map((z: any) => [Number(z.id), String(z.nom ?? '—')]))))
+      .then((r) =>
+        setZoneNames(
+          new Map((listOf(unwrap(r)) as ZoneRow[]).map((z) => [Number(z.id), String(z.nom ?? '—')] as [number, string])),
+        ),
+      )
       .catch(() => setZoneNames(new Map()));
   }, []);
   // OrderResource enveloppe chaque commande dans { success, message, data } : on déballe.
-  const orders = commandes.map((r: any) => r?.data ?? r);
-  const activities: Activity[] = orders.slice(0, 6).map((o: any) => ({
+  const orders = commandes.map((r) => ((r as { data?: OrderRow }).data ?? r) as OrderRow);
+  const activities: Activity[] = orders.slice(0, 6).map((o) => ({
     id: `CMD-${o.id}`,
     action: tx("Commande"),
     detail: `Commande #${o.id} — ${o.statut ?? '—'}`,
     status: o.statut ?? '—',
-    statusColor: SC(o.statut),
+    statusColor: SC(o.statut ?? ''),
     date: (o.created_at ?? '').slice(0, 10),
     time: (o.created_at ?? '').slice(11, 16),
     userName: o.client?.nom_complet ?? '—', // OrderResource n'expose pas encore le client
@@ -85,12 +90,15 @@ export default function AdminDashboardPage() {
     payment: o.payment?.methode ?? '—',
     fee: fmtFcfa(o.commission_plateforme ?? o.commission),
     deliveryFee: fmtFcfa(o.frais_livraison),
-    items: (o.items ?? []).map((i: any) => `${i.nom ?? ''}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
+    items: (o.items ?? []).map((i) => `${i.nom ?? ''}${i.quantite ? ` ×${i.quantite}` : ''}`).join(', ') || '—',
     audit: `Commande n°${o.id}`,
     cta: tx("Voir la commande"),
   }));
   useEffect(() => {
-    adminApi.getDashboard().then((r: any) => setDash(unwrap(r))).catch(() => setDash(null));
+    adminApi
+      .getDashboard()
+      .then((r) => setDash(unwrap(r) as DashboardRow | null))
+      .catch(() => setDash(null));
   }, []);
   // KPI réels (AdminDashboardController : ca, commandes, utilisateurs_actifs, par_statut)
   const parStatut: Record<string, number> = dash?.par_statut ?? {};
@@ -100,7 +108,7 @@ export default function AdminDashboardPage() {
 
   // « Croissance des ventes » + « Ventes par Zone » : calculés depuis les vraies commandes de la période
   const [range, setRange] = useState<7 | 30>(7);
-  const [periodOrders, setPeriodOrders] = useState<any[] | null>(null);
+  const [periodOrders, setPeriodOrders] = useState<OrderRow[] | null>(null);
   const [capped, setCapped] = useState(false);
   const [chartErr, setChartErr] = useState<string | null>(null);
   const since = useMemo(() => {
@@ -115,13 +123,13 @@ export default function AdminDashboardPage() {
     setChartErr(null);
     setCapped(false);
     (async () => {
-      const acc: any[] = [];
+      const acc: OrderRow[] = [];
       for (let page = 1; page <= MAX_ORDER_PAGES; page++) {
-        const res: any = await adminApi.getOrders({ page });
-        const rows = listOf(res).map((r: any) => r?.data ?? r);
+        const reponse = await adminApi.getOrders({ page });
+        const rows = listOf(reponse).map((r) => ((r as { data?: OrderRow }).data ?? r) as OrderRow);
         acc.push(...rows);
         const oldest = rows[rows.length - 1]?.created_at;
-        if (page >= Number(res?.meta?.last_page ?? 1) || !oldest || new Date(oldest) < since) return acc;
+        if (page >= Number((reponse as { meta?: { last_page?: unknown } }).meta?.last_page ?? 1) || !oldest || new Date(oldest) < since) return acc;
         if (page === MAX_ORDER_PAGES && alive) setCapped(true);
       }
       return acc;
@@ -138,6 +146,8 @@ export default function AdminDashboardPage() {
     periodOrders
       .filter((o) => o.statut !== 'annule')
       .forEach((o) => {
+        // sans created_at, une commande ne peut être rattachée à aucun jour du graphique
+        if (!o.created_at) return;
         const k = dayKey(new Date(o.created_at));
         totals.set(k, (totals.get(k) ?? 0) + Number(o.montant_total ?? 0));
       });
@@ -185,12 +195,12 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     adminApi
       .getProducts({ per_page: 100 })
-      .then((r: any) =>
+      .then((r) =>
         setLowStock(
-          listOf(unwrap(r))
-            .filter((p: any) => Number(p.stock) <= LOW_STOCK)
-            .sort((a: any, b: any) => Number(a.stock) - Number(b.stock))
-            .map((p: any) => ({ id: Number(p.id), nom: String(p.nom), stock: Number(p.stock) })),
+          (listOf(unwrap(r)) as ProductRow[])
+            .filter((p) => Number(p.stock) <= LOW_STOCK)
+            .sort((a, b) => Number(a.stock) - Number(b.stock))
+            .map((p) => ({ id: Number(p.id), nom: String(p.nom ?? ''), stock: Number(p.stock) })),
         ),
       )
       .catch((e) => setLowStockErr(formatApiError(extractApiError(e))));

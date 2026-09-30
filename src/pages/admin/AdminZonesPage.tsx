@@ -5,12 +5,13 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { fmtFcfa } from '../../services/api/unwrap';
-import { formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import { searchPlaces } from '../../services/api/geocode';
 import type { GeoPlace } from '../../services/api/geocode';
 import DESIGN_SCRIPT from './_scripts/AdminZonesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import type { LandmarkRow, UserRow, ZoneRow } from '../../types/adminRows';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -43,19 +44,25 @@ const TILE_URLS = [
 const VUE_BENIN: L.LatLngExpression = [8.0, 2.3];
 
 type Pt = { nom: string; lat: number; lng: number };
+/** Sommet en plan (x = longitude, y = latitude) pour l'enveloppe convexe. */
+type Sommet = { x: number; y: number };
 
 /** Points d'un polygone_geo (tableau de [lat, lng], d'objets, ou GeoJSON). */
-const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
+const polyPoints = (pg: unknown): Array<{ lat: number; lng: number }> => {
   if (!pg) return [];
-  let coords: any = pg;
-  if (!Array.isArray(coords) && Array.isArray(coords?.coordinates)) coords = coords.coordinates;
-  if (Array.isArray(coords?.[0]?.[0])) coords = coords[0];
+  let coords: unknown = pg;
+  const objet = coords as { coordinates?: unknown };
+  if (!Array.isArray(coords) && Array.isArray(objet?.coordinates)) coords = objet.coordinates;
+  const tableau = Array.isArray(coords) ? (coords as unknown[]) : null;
+  const premier = tableau?.[0];
+  if (Array.isArray(premier) && Array.isArray((premier as unknown[])[0])) coords = premier;
   if (!Array.isArray(coords)) return [];
   const pts: Array<{ lat: number; lng: number }> = [];
-  for (const pt of coords) {
+  for (const pt of coords as unknown[]) {
     if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
-      const lat = Number((pt as any).latitude ?? (pt as any).lat ?? (pt as any)[0]);
-      const lng = Number((pt as any).longitude ?? (pt as any).lng ?? (pt as any)[1]);
+      const brut = pt as { latitude?: unknown; lat?: unknown; longitude?: unknown; lng?: unknown; 0?: unknown; 1?: unknown };
+      const lat = Number(brut.latitude ?? brut.lat ?? brut[0]);
+      const lng = Number(brut.longitude ?? brut.lng ?? brut[1]);
       if (Number.isFinite(lat) && Number.isFinite(lng)) pts.push({ lat, lng });
     } else if (Array.isArray(pt) && pt.length >= 2) {
       const a = Number(pt[0]);
@@ -76,13 +83,13 @@ const polyPoints = (pg: any): Array<{ lat: number; lng: number }> => {
 const hullPoly = (pts: Array<{ lat: number; lng: number }>): Array<[number, number]> | null => {
   if (pts.length < 3) return null;
   const sorted = pts.map((p) => ({ x: p.lng, y: p.lat })).sort((a, b) => a.x - b.x || a.y - b.y);
-  const cross = (o: any, a: any, b: any) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  const lower: any[] = [];
+  const cross = (o: Sommet, a: Sommet, b: Sommet) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: Sommet[] = [];
   for (const p of sorted) {
     while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
     lower.push(p);
   }
-  const upper: any[] = [];
+  const upper: Sommet[] = [];
   for (let i = sorted.length - 1; i >= 0; i--) {
     const p = sorted[i];
     while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
@@ -129,9 +136,9 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
           setRes(rows);
           setSerr('');
         })
-        .catch((e: any) => {
+        .catch((e: unknown) => {
           setRes([]);
-          setSerr(String(e?.message ?? tx("Recherche indisponible (connexion ?)")));
+          setSerr(String((e as { message?: string } | undefined)?.message ?? tx("Recherche indisponible (connexion ?)")));
         })
         .finally(() => setBusy(false));
     }, 350);
@@ -182,11 +189,12 @@ function PlaceSearch({ onPick, placeholder }: { onPick: (p: GeoPlace) => void; p
 export default function AdminZonesPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
-  const { rows: zones, err, loading, reload } = useLiveRows(() => adminApi.getZones());
-  const { rows: landmarks, reload: reloadLm } = useLiveRows(() => adminApi.getLandmarks());
-  const { rows: managers } = useLiveRows(() => adminApi.getUsers({ role: 'manager', per_page: 100 }));
-  const { rows: livreurs } = useLiveRows(() => adminApi.getUsers({ role: 'livreur', per_page: 100 }));
-  const [selId, setSelId] = useState<number | null>(null);
+  const { rows: zones, err, loading, reload } = useLiveRows<ZoneRow>(() => adminApi.getZones());
+  const { rows: landmarks, reload: reloadLm } = useLiveRows<LandmarkRow>(() => adminApi.getLandmarks());
+  const { rows: managers } = useLiveRows<UserRow>(() => adminApi.getUsers({ role: 'manager', per_page: 100 }));
+  const { rows: livreurs } = useLiveRows<UserRow>(() => adminApi.getUsers({ role: 'livreur', per_page: 100 }));
+  /** Identifiant de la zone sélectionnée — tel que renvoyé par la ligne, sans conversion hasardeuse. */
+  const [selId, setSelId] = useState<number | string | null>(null);
   const [f, setF] = useState({ nom: '', km_prix: '', description: '', manager: '' });
   const [tileIdx, setTileIdx] = useState(0);
   const [modal, setModal] = useState<null | 'zone' | 'lm'>(null);
@@ -195,12 +203,12 @@ export default function AdminZonesPage() {
   const [zoneForm, setZoneForm] = useState(ZONE_INIT);
   const [zonePts, setZonePts] = useState<Pt[]>([]);
 
-  const sel: any = zones.find((z: any) => z.id === selId) ?? null;
-  const lmSel: any[] = sel ? landmarks.filter((l: any) => String(l.zone_id) === String(sel.id)) : [];
-  const countRole = (rows: any[], id: any) =>
-    rows.filter((u: any) => String(u.zone?.id ?? u.zone_id ?? u.profil?.zone?.id ?? '') === String(id)).length;
+  const sel: ZoneRow | null = zones.find((z) => z.id === selId) ?? null;
+  const lmSel = sel ? landmarks.filter((l) => String(l.zone_id) === String(sel.id)) : [];
+  const countRole = (rows: UserRow[], id: number | string) =>
+    rows.filter((u) => String(u.zone?.id ?? u.zone_id ?? u.profil?.zone?.id ?? '') === String(id)).length;
 
-  const selectZone = (z: any) => {
+  const selectZone = (z: ZoneRow) => {
     setSelId(z.id);
     setF({
       nom: String(z.nom ?? ''),
@@ -229,23 +237,23 @@ export default function AdminZonesPage() {
       return;
     }
     try {
-      await adminApi.updateZone(sel.id, payload);
+      await adminApi.updateZone(Number(sel.id), payload);
       reload();
       reloadLm();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
   const delZone = async () => {
     if (!sel) return;
     if (!window.confirm(tr(`Supprimer la zone « ${sel.nom} » et ses points de repère ?`, `Delete zone “${sel.nom}” and its landmarks?`))) return;
     try {
-      await adminApi.deleteZone(sel.id);
+      await adminApi.deleteZone(Number(sel.id));
       setSelId(null);
       reload();
       reloadLm();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -255,13 +263,13 @@ export default function AdminZonesPage() {
     try {
       await adminApi.updateZone(zoneId, { polygone_geo: hull });
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
-  const geoPtsOf = (zoneId: number, list: any[] = landmarks) =>
+  const geoPtsOf = (zoneId: number, list: LandmarkRow[] = landmarks) =>
     list
-      .filter((l: any) => String(l.zone_id) === String(zoneId))
-      .map((l: any) => ({ lat: Number(l.latitude), lng: Number(l.longitude) }))
+      .filter((l) => String(l.zone_id) === String(zoneId))
+      .map((l) => ({ lat: Number(l.latitude), lng: Number(l.longitude) }))
       .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
   /* ---------- Modale « Nouvelle zone » (la zone = ses points à la limite) ---------- */
@@ -294,7 +302,7 @@ export default function AdminZonesPage() {
       return;
     }
     try {
-      const res: any = await adminApi.createZone({
+      const reponse = await adminApi.createZone({
         nom: z.nom.trim(),
         km_prix: Number(z.km_prix),
         min_prix: 0,
@@ -303,7 +311,8 @@ export default function AdminZonesPage() {
         manager_id: z.manager ? Number(z.manager) : null,
         polygone_geo: hull,
       });
-      const zoneId = Number(res?.data?.id ?? res?.id);
+      const corps = ((reponse as { data?: Record<string, unknown> } | undefined)?.data ?? (reponse as Record<string, unknown> | undefined)) as { id?: unknown } | undefined;
+      const zoneId = Number(corps?.id);
       for (const p of zonePts) {
         await adminApi.createLandmark({ zone_id: zoneId, nom: p.nom, latitude: p.lat, longitude: p.lng });
       }
@@ -312,7 +321,7 @@ export default function AdminZonesPage() {
       reloadLm();
       if (Number.isFinite(zoneId)) setSelId(zoneId);
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -337,7 +346,7 @@ export default function AdminZonesPage() {
     setModal('lm');
   };
   /* Modification d'un repère existant : même modale, pré-remplie (PUT /admin/landmarks/{id}) */
-  const openLmEdit = (lm: any) => {
+  const openLmEdit = (lm: LandmarkRow) => {
     setLmEditId(Number(lm.id));
     setLmForm({
       zone_id: String(lm.zone_id ?? ''),
@@ -370,7 +379,7 @@ export default function AdminZonesPage() {
     };
     try {
       if (lmEditId !== null) {
-        const old: any = landmarks.find((l: any) => Number(l.id) === lmEditId);
+        const old = landmarks.find((l) => Number(l.id) === lmEditId);
         await adminApi.updateLandmark(lmEditId, payload);
         // La zone = enveloppe de ses points : si la position ou la zone change, on recalcule
         // la forme de la zone du repère (et celle de l'ancienne zone s'il a changé de zone).
@@ -381,7 +390,7 @@ export default function AdminZonesPage() {
           String(old.latitude ?? '') !== String(payload.latitude ?? '') ||
           String(old.longitude ?? '') !== String(payload.longitude ?? '');
         if (moved) {
-          const updated = landmarks.map((l: any) => (Number(l.id) === lmEditId ? { ...l, ...payload } : l));
+          const updated = landmarks.map((l) => (Number(l.id) === lmEditId ? { ...l, ...payload } : l));
           await saveZoneShape(zoneId, geoPtsOf(zoneId, updated));
           if (oldZoneId && oldZoneId !== zoneId) await saveZoneShape(oldZoneId, geoPtsOf(oldZoneId, updated));
         }
@@ -395,19 +404,19 @@ export default function AdminZonesPage() {
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
-  const delLm = async (lm: any) => {
+  const delLm = async (lm: LandmarkRow) => {
     if (!window.confirm(tr(`Supprimer le point de repère « ${lm.nom} » ?`, `Delete landmark “${lm.nom}”?`))) return;
     try {
-      await adminApi.deleteLandmark(lm.id);
-      const rest = landmarks.filter((l: any) => l.id !== lm.id);
+      await adminApi.deleteLandmark(Number(lm.id));
+      const rest = landmarks.filter((l) => l.id !== lm.id);
       await saveZoneShape(Number(lm.zone_id), geoPtsOf(Number(lm.zone_id), rest));
       reloadLm();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -415,7 +424,7 @@ export default function AdminZonesPage() {
     if (!sel) return true;
     const poly = polyPoints(sel.polygone_geo).length >= 3;
     const lmGeo = landmarks.some(
-      (l: any) => String(l.zone_id) === String(sel.id) && Number.isFinite(Number(l.latitude)) && Number.isFinite(Number(l.longitude)),
+      (l) => String(l.zone_id) === String(sel.id) && Number.isFinite(Number(l.latitude)) && Number.isFinite(Number(l.longitude)),
     );
     return poly || lmGeo;
   }, [sel, landmarks]);
@@ -518,8 +527,8 @@ export default function AdminZonesPage() {
     grp.clearLayers();
     const cadrage: L.LatLngExpression[] = [];
     // Une zone s'affiche individuellement : si sélection → SES formes uniquement
-    const zonesToDraw: any[] = selId != null ? zones.filter((z: any) => z.id === selId) : zones;
-    const lmsToDraw: any[] = selId != null ? landmarks.filter((l: any) => String(l.zone_id) === String(selId)) : landmarks;
+    const zonesToDraw = selId != null ? zones.filter((z) => z.id === selId) : zones;
+    const lmsToDraw = selId != null ? landmarks.filter((l) => String(l.zone_id) === String(selId)) : landmarks;
     for (const z of zonesToDraw) {
       const active = z.id === selId;
       const pts = polyPoints(z.polygone_geo).map((p) => [p.lat, p.lng] as L.LatLngExpression);
@@ -580,9 +589,9 @@ export default function AdminZonesPage() {
                 {zones.length === 0 && !loading && (
                   <p className="text-secondary text-text-secondary p-5 bg-bg-card rounded-[14px] card-shadow">{tx("Aucune zone enregistrée. Utilisez « Nouvelle zone ».")}</p>
                 )}
-                {zones.map((z: any) => {
+                {zones.map((z) => {
                   const isSel = z.id === selId;
-                  const lmCount = landmarks.filter((l: any) => String(l.zone_id) === String(z.id)).length;
+                  const lmCount = landmarks.filter((l) => String(l.zone_id) === String(z.id)).length;
                   return (
                     <div key={z.id} onClick={() => selectZone(z)} className={isSel ? 'bg-primary-tint border-2 border-primary rounded-[14px] p-5 card-shadow cursor-pointer transition-all' : 'bg-bg-card border-[0.5px] border-border-default rounded-[14px] p-5 card-shadow hover:border-primary-light cursor-pointer group transition-all'}> <div className="flex justify-between items-start mb-4"> <div> <h3 className="font-h3 text-h3 text-text-main mb-1">{z.nom}</h3> <div className="flex items-center gap-2"> <span className={`w-2 h-2 rounded-full ${z.open_zone ? 'bg-success' : 'bg-error'}`}></span> <span className={`text-secondary font-medium ${z.open_zone ? 'text-success' : 'text-error'}`}>{z.open_zone ? 'Active' : tx("Fermée")}</span> </div> </div> <div className={`flex gap-2 ${isSel ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="edit" className="text-[18px]" /> </button> <button className={isSel ? 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-primary-light/20 text-primary transition-colors border border-primary-light/50' : 'w-8 h-8 flex items-center justify-center rounded-md hover:bg-app text-text-secondary border border-border-default'} onClick={(e) => { e.stopPropagation(); selectZone(z); }}> <MIcon name="visibility" className="text-[18px]" /> </button> </div> </div> <p className="text-secondary text-text-secondary mb-4">{countRole(managers, z.id)} managers · {countRole(livreurs, z.id)} livreurs · {lmCount} points de repère</p> <div className={`flex justify-between items-center pt-4 ${isSel ? 'border-t border-primary-light/30' : 'border-t border-border-default'}`}> <span className="text-secondary text-text-tertiary">{tx("Frais de livraison")}</span> <span className="font-price text-price text-primary">{fmtFcfa(Number(z.km_prix ?? z.tarif_km ?? 0))}</span> </div> </div>
                   );
@@ -600,12 +609,12 @@ export default function AdminZonesPage() {
                                 {tx("Ajouter")}
                             </button> </div> <div className="flex flex-wrap gap-3">
                 {lmSel.length === 0 && <span className="text-secondary text-text-secondary">{tx("Aucun point de repère enregistré pour cette zone.")}</span>}
-                {lmSel.map((lm: any) => (
+                {lmSel.map((lm) => (
                   <div key={lm.id} className="chip group flex items-center gap-2 px-3 py-2 rounded-full bg-primary-tint text-primary-dark"> <MIcon name="location_on" className="text-[16px]" /> <span className="text-label">{lm.nom}</span> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-primary" title={tx("Modifier")} onClick={() => openLmEdit(lm)}> <MIcon name="edit" className="text-[14px]" /> </button> <button className="opacity-0 group-hover:opacity-100 transition-opacity text-primary-dark/70 hover:text-error" title={tx("Supprimer")} onClick={() => void delLm(lm)}> <MIcon name="close" className="text-[14px]" /> </button> </div>
                 ))}
               </div> </div>  <div className="bg-bg-card p-lg rounded-[14px] card-shadow"> <h3 className="font-h3 text-h3 text-text-main mb-lg">{tx("Détails de la zone")}</h3> <form className="grid grid-cols-2 gap-md" onSubmit={(e) => e.preventDefault()}> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Nom de la zone")}</label> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" type="text" value={f.nom} onChange={(e) => setF({ ...f, nom: e.target.value })} /> </div> <div className="col-span-2 md:col-span-1 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Frais de livraison (FCFA)")}</label> <div className="relative"> <input className="w-full h-11 px-md rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-16" type="number" value={f.km_prix} onChange={(e) => setF({ ...f, km_prix: e.target.value })} /> <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold text-micro">FCFA</span> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">{tx("Manager responsable")}</label> <div className="relative"> <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12 bg-white" value={f.manager} onChange={(e) => setF({ ...f, manager: e.target.value })}> <option value="">{tx("— Aucun —")}</option>
-                    {managers.map((m: any) => (
-                      <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
+                    {managers.map((m) => (
+                      <option key={m.id} value={String(m.id)}>{String(m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`)}</option>
                     ))}
                   </select> <MIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-tertiary" /> </div> </div> <div className="col-span-2 space-y-1"> <label className="text-secondary text-text-secondary">Description</label> <textarea className="w-full px-md py-2 rounded-lg border-border-default focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}></textarea> </div> <div className="col-span-2 flex justify-end gap-3 mt-4">
                 {sel && (
@@ -664,8 +673,8 @@ export default function AdminZonesPage() {
                   <label className="font-label text-label text-text-secondary">{tx("Manager responsable")}</label>
                   <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" value={zoneForm.manager} onChange={(e) => setZoneForm({ ...zoneForm, manager: e.target.value })}>
                     <option value="">{tx("— Aucun —")}</option>
-                    {managers.map((m: any) => (
-                      <option key={m.id} value={String(m.id)}>{m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`}</option>
+                    {managers.map((m) => (
+                      <option key={m.id} value={String(m.id)}>{String(m.nom_complet ?? m.name ?? m.email ?? `Manager #${m.id}`)}</option>
                     ))}
                   </select>
                 </div>
@@ -701,7 +710,7 @@ export default function AdminZonesPage() {
               <div className="space-y-xs">
                 <label className="font-label text-label text-text-secondary">Zone</label>
                 <select className="w-full h-11 px-md rounded-lg border-border-default appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white" value={lmForm.zone_id} onChange={(e) => setLmForm({ ...lmForm, zone_id: e.target.value })}>
-                  {zones.map((z: any) => (
+                  {zones.map((z) => (
                     <option key={z.id} value={String(z.id)}>{z.nom}</option>
                   ))}
                 </select>

@@ -3,10 +3,12 @@ import { useDesignScript } from '../../utils/designRuntime';
 import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { listOf } from '../../services/api/unwrap';
-import { formatApiError } from '../../utils/apiError';
+import { extractApiError, formatApiError } from '../../utils/apiError';
 import DESIGN_SCRIPT from './_scripts/AdminCategoriesPage';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import MIcon from '../../components/shared/MIcon';
+import type { CategoryRow, ProductRow } from '../../types/adminRows';
+import { versBooleen } from '../../types/adminRows';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
 
@@ -50,23 +52,24 @@ const COLOR_CHOICES = [
 export default function AdminCategoriesPage() {
   useLanguage();
   useDesignScript(DESIGN_SCRIPT);
-  const { rows: cats, err, loading, reload } = useLiveRows(() => adminApi.getCategories());
+  const { rows: cats, err, loading, reload } = useLiveRows<CategoryRow>(() => adminApi.getCategories());
   // Nombre de produits réel par catégorie (l'API ne renvoie pas produits_count, B-17) : calculé sur GET /admin/products
-  const { rows: produits } = useLiveRows(async () => {
-    const acc: any[] = [];
+  const { rows: produits } = useLiveRows<ProductRow>(async () => {
+    const acc: ProductRow[] = [];
     for (let page = 1; page <= 10; page++) {
-      const res: any = await adminApi.getProducts({ per_page: 100, page });
-      acc.push(...listOf(res));
-      if (page >= Number(res?.meta?.last_page ?? 1)) break;
+      const reponse = await adminApi.getProducts({ per_page: 100, page });
+      const corps = reponse as { meta?: { last_page?: unknown } } | undefined;
+      acc.push(...(listOf(corps) as ProductRow[]));
+      if (page >= Number(corps?.meta?.last_page ?? 1)) break;
     }
     return { data: acc };
   });
   const countByCat = new Map<number, number>();
-  produits.forEach((pr: any) => {
+  produits.forEach((pr) => {
     const id = Number(pr?.categorie?.id ?? pr?.categorie_id);
     if (id) countByCat.set(id, (countByCat.get(id) ?? 0) + 1);
   });
-  const [sel, setSel] = useState<any>(null);
+  const [sel, setSel] = useState<CategoryRow | null>(null);
   const [fNom, setFNom] = useState('');
   const [fDesc, setFDesc] = useState('');
   const [fIcon, setFIcon] = useState('nutrition');
@@ -79,13 +82,13 @@ export default function AdminCategoriesPage() {
     el.classList.remove('translate-y-20', 'opacity-0');
     window.setTimeout(() => el.classList.add('translate-y-20', 'opacity-0'), 2200);
   };
-  const selectCat = (c: any) => {
+  const selectCat = (c: CategoryRow) => {
     setSel(c);
     setFNom(String(c.nom ?? ''));
     setFDesc(String(c.description ?? ''));
     setFIcon(String(c.icone ?? CAT_ICON(String(c.nom ?? ''))));
     setFColor(String(c.couleur ?? 'primary'));
-    setFAccueil(c.en_accueil ?? true);
+    setFAccueil(versBooleen(c.en_accueil, true));
   };
   const newCat = () => {
     setSel({ id: null });
@@ -103,27 +106,27 @@ export default function AdminCategoriesPage() {
     const payload = {
       nom: fNom.trim(),
       description: fDesc,
-      parent_id: sel?.parent_id ?? undefined,
+      parent_id: sel?.parent_id == null ? undefined : Number(sel.parent_id),
       icone: fIcon,
       couleur: fColor,
       en_accueil: fAccueil,
     };
     try {
-      if (sel?.id) await adminApi.updateCategory(sel.id, payload);
+      if (sel?.id) await adminApi.updateCategory(Number(sel.id), payload);
       else await adminApi.createCategory(payload);
       showToast();
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
-  const delCat = async (c: any) => {
+  const delCat = async (c: CategoryRow) => {
     if (!window.confirm(tr(`Supprimer la catégorie « ${c.nom} » ?`, `Delete category “${c.nom}”?`))) return;
     try {
-      await adminApi.deleteCategory(c.id);
+      await adminApi.deleteCategory(Number(c.id));
       reload();
     } catch (e) {
-      window.alert(formatApiError(e as any));
+      window.alert(formatApiError(extractApiError(e)));
     }
   };
 
@@ -137,8 +140,8 @@ export default function AdminCategoriesPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-  <section className="flex-1 overflow-y-auto p-lg pb-xl"> <div className="max-w-[1152px] mx-auto space-y-lg">  <div className="flex justify-between items-end"> <div> <nav className="flex items-center gap-2 text-micro text-text-tertiary uppercase tracking-widest mb-2"> <span className="">{tx("Catalogue")}</span> <MIcon name="chevron_right" className="text-[14px]" /> <span className="text-primary font-bold">{tx("Catégories")}</span> </nav> <h1 className="font-h1 text-h1 text-on-surface">{tx("Gestion des Catégories")}</h1> </div> <button className="flex items-center gap-2 px-6 py-3 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover active:scale-[0.97] transition-all shadow-lg shadow-primary-container/20" onClick={newCat}> <MIcon name="add_circle" /> <span className="">{tx("Ajouter une catégorie")}</span> </button> </div>  <div className="grid grid-cols-1 md:grid-cols-3 gap-md"> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-primary-tint rounded-lg flex items-center justify-center text-primary"> <MIcon name="category" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">{tx("Total Catégories")}</p> <p className="text-h2 font-h2 text-on-surface">{cats.length}</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-success-light rounded-lg flex items-center justify-center text-success-dark"> <MIcon name="check_circle" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Actives</p> <p className="text-h2 font-h2 text-on-surface">{cats.filter((c: any) => c.en_accueil === true).length || (cats.length ? String(cats.filter((c: any) => c.actif !== false).length) : "0")}</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-amber-light rounded-lg flex items-center justify-center text-amber-text"> <MIcon name="inventory" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">{tx("Total Produits")}</p> <p className="text-h2 font-h2 text-on-surface">{produits.length}</p> </div> </div> </div>  <div className="bg-bg-card rounded-xl border border-border-default overflow-hidden shadow-sm"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">{tx("Catégorie")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Description</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-center">{tx("Produits")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">{tx("Statut")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-right">Actions</th> </tr> </thead> <tbody>
-                {cats.map((c: any) => {
+  <section className="flex-1 overflow-y-auto p-lg pb-xl"> <div className="max-w-[1152px] mx-auto space-y-lg">  <div className="flex justify-between items-end"> <div> <nav className="flex items-center gap-2 text-micro text-text-tertiary uppercase tracking-widest mb-2"> <span className="">{tx("Catalogue")}</span> <MIcon name="chevron_right" className="text-[14px]" /> <span className="text-primary font-bold">{tx("Catégories")}</span> </nav> <h1 className="font-h1 text-h1 text-on-surface">{tx("Gestion des Catégories")}</h1> </div> <button className="flex items-center gap-2 px-6 py-3 bg-primary-container text-white font-bold rounded-[10px] hover:bg-primary-hover active:scale-[0.97] transition-all shadow-lg shadow-primary-container/20" onClick={newCat}> <MIcon name="add_circle" /> <span className="">{tx("Ajouter une catégorie")}</span> </button> </div>  <div className="grid grid-cols-1 md:grid-cols-3 gap-md"> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-primary-tint rounded-lg flex items-center justify-center text-primary"> <MIcon name="category" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">{tx("Total Catégories")}</p> <p className="text-h2 font-h2 text-on-surface">{cats.length}</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-success-light rounded-lg flex items-center justify-center text-success-dark"> <MIcon name="check_circle" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">Actives</p> <p className="text-h2 font-h2 text-on-surface">{cats.filter((c) => c.en_accueil === true).length || (cats.length ? String(cats.filter((c) => c.actif !== false).length) : "0")}</p> </div> </div> <div className="bg-bg-card p-md rounded-xl border border-border-default flex items-center gap-4"> <div className="w-12 h-12 bg-amber-light rounded-lg flex items-center justify-center text-amber-text"> <MIcon name="inventory" className="text-[28px]" /> </div> <div> <p className="text-text-secondary text-micro uppercase font-bold tracking-tight">{tx("Total Produits")}</p> <p className="text-h2 font-h2 text-on-surface">{produits.length}</p> </div> </div> </div>  <div className="bg-bg-card rounded-xl border border-border-default overflow-hidden shadow-sm"> <table className="w-full text-left border-collapse"> <thead> <tr className="bg-bg-secondary border-b border-border-default"> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">{tx("Catégorie")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">Description</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-center">{tx("Produits")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro">{tx("Statut")}</th> <th className="px-lg py-4 font-label text-text-secondary uppercase tracking-wider text-micro text-right">Actions</th> </tr> </thead> <tbody>
+                {cats.map((c) => {
                   const nom = String(c.nom ?? '—');
                   const actif = typeof c.actif === 'boolean' ? c.actif : c.statut != null ? !String(c.statut).toLowerCase().includes('inact') : null;
                   const count = countByCat.get(Number(c.id)) ?? 0;

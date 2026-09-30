@@ -64,6 +64,11 @@ import ManagerOrdersPage from '../src/pages/manager/ManagerOrdersPage';
 import AdminDashboardPage from '../src/pages/admin/AdminDashboardPage';
 import AdminUsersPage from '../src/pages/admin/AdminUsersPage';
 import AdminSystemePage from '../src/pages/admin/AdminSystemePage';
+import AdminCatalogPage from '../src/pages/admin/AdminCatalogPage';
+import AdminCategoriesPage from '../src/pages/admin/AdminCategoriesPage';
+import AdminZonesPage from '../src/pages/admin/AdminZonesPage';
+import AdminOrdersPage from '../src/pages/admin/AdminOrdersPage';
+import AdminParametresPage from '../src/pages/admin/AdminParametresPage';
 import AdminClesApiPage from '../src/pages/admin/AdminClesApiPage';
 
 /**
@@ -151,6 +156,20 @@ describe('espace administrateur : amorçage', () => {
   it('rend la gestion des utilisateurs', () => {
     const html = rendu(AdminUsersPage);
     expect(html).toContain('Utilisateurs');
+  });
+
+  it.each([
+    ['catalogue', () => AdminCatalogPage],
+    ['catégories', () => AdminCategoriesPage],
+    ['zones', () => AdminZonesPage],
+    ['commandes', () => AdminOrdersPage],
+    ['paramètres', () => AdminParametresPage],
+  ])('rend l’écran %s sur un état explicite, jamais une ligne inventée', (_nom, Page) => {
+    const html = rendu(Page());
+    expect(html).toContain('TOKPa');
+    // Les tableaux se remplissent depuis GET /admin/* : avant la réponse, l’écran doit le dire
+    // (chargement, vide assumé, ou étiquette « aperçu maquette » pour ce qui n’a pas d’API).
+    expect(html).toMatch(/Chargement|Aucun|aperçu maquette|indisponible/i);
   });
 
   it('marque explicitement les écrans sans endpoint backend', () => {

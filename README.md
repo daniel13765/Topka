@@ -81,25 +81,19 @@ npm run build         # vite build
 
 ### Dette de lint assumée
 
-`npm run lint` remonte **zéro erreur** et 159 avertissements non bloquants, tous justifiés dans
-`eslint.config.js` règle par règle :
+`npm run lint` remonte **zéro erreur** et 40 avertissements non bloquants, chacun justifié dans
+`eslint.config.js` :
 
 | Règle | Sites | Pourquoi en avertissement |
 | --- | --- | --- |
-| `@typescript-eslint/no-explicit-any` | 119 | Pages d'administration reprenant des formes de données du maquette sans schéma côté backend ; à typer écran par écran. |
-| `react-hooks/set-state-in-effect` | 36 | Lever un drapeau de chargement en début d'effet est le motif délibéré du projet (aucun éclat de contenu avant la réponse). |
-| `react-hooks/exhaustive-deps` | 4 | Effets de branchement SDK (Google Maps) et listes logiques volontairement bornées. |
+| `react-hooks/set-state-in-effect` | 36 | Lever un drapeau de chargement en début d'effet est le motif délibéré du projet : aucun éclat de contenu avant la réponse de l'API. |
+| `react-hooks/exhaustive-deps` | 4 | Effets de branchement d'un SDK externe (`CarteGoogle`) et listes volontairement bornées (`MessagingPage`, `NegotiationsPage`, `LivreurHistoryPage`). |
 
-Un écran typé se valide avec `npm run lint -- --max-warnings=0` sur le dépôt entier, ou en
-remettant la règle en `error` pour le dossier concerné.
-
-Ces quatre commandes sont celles exécutées par le workflow `.github/workflows/ci.yml` (Node 22) à chaque
-poussée sur `main` ou `test` et à chaque demande de fusion. Le workflow vérifie en plus que le dépôt ne contient
-ni lanceur Windows ni `dist/`, qu’aucune clé Google Maps n’y est commitée, et qu’après découpage aucun
-chunk JS ne dépasse 700 Ko. Le build de production s’y déroule sans avertissement.
-
-Les espaces client, manager, administrateur et livreur sont couverts par des tests de rendu : ils rendent
-chaque écran sans effet ni donnée, ce qui fige l’état d’attente et les libellés d’honnêteté (B‑16).
+`@typescript-eslint/no-explicit-any` est revenue en **erreur partout** : les 119 sites de
+`src/pages/admin` ont été typés via `src/types/adminRows.ts`, miroir tolérant des ressources
+`ZoneResource`, `PointRepereResource`, `ProductResource`, `CategoryResource`, `BundleResource`,
+`OrderResource` et `AdminDashboardController` telles que les écrans les lisent. La règle ne doit
+pas être rétrogradée : quand un champ manque, on l'ajoute à `adminRows.ts`.
 
 ## Routes principales
 
