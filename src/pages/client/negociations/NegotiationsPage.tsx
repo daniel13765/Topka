@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, setProposals, type NegotiationItem } from '../../../store/slices/negotiation/negotiationSlice';
@@ -111,7 +111,7 @@ export default function NegotiationsPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -298,12 +298,12 @@ export default function NegotiationsPage() {
             {/* Negotiation Items */}
             {isApiLoading ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
-                <MIcon name="sync" className="mx-auto text-[32px] text-primary animate-spin mb-2" />
+                <FaIcon name="sync" className="mx-auto text-[32px] text-primary animate-spin mb-2" />
                 <p className="font-h3 text-h3 text-on-surface font-medium">{tx("Chargement des négociations...")}</p>
               </div>
             ) : filteredHistory.length === 0 ? (
               <div className="bg-bg-card rounded-card p-lg text-center border border-border-default shadow-sm">
-                <MIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />
+                <FaIcon name="handshake" className="mx-auto text-[48px] text-text-tertiary mb-2" />
                 <p className="font-h3 text-h3 text-on-surface font-medium">
                   {isFr ? tx("Aucune négociation enregistrée") : 'No negotiations found'}
                 </p>
@@ -349,7 +349,7 @@ export default function NegotiationsPage() {
                           className="h-full w-full object-cover rounded-lg"
                         />
                       ) : (
-                        <MIcon name={iconName} className="text-outline text-4xl" />
+                        <FaIcon name={iconName} className="text-outline text-4xl" />
                       )}
                     </div>
 
@@ -467,7 +467,7 @@ export default function NegotiationsPage() {
                               onClick={() => handleAddToCart(neg)}
                               className="px-md py-2 bg-primary-container text-white font-medium text-label rounded-button hover:bg-primary-hover active:scale-95 transition-all flex items-center gap-xs cursor-pointer shadow-sm"
                             >
-                              <MIcon name="shopping_basket" className="text-[18px]" />
+                              <FaIcon name="shopping_basket" className="text-[18px]" />
                               {isFr ? "Finaliser l'achat" : 'Checkout deal'}
                             </button>
                             <button
@@ -548,7 +548,7 @@ export default function NegotiationsPage() {
           <aside className="w-full lg:w-[300px] shrink-0">
             <div className="bg-white rounded-card p-lg border border-border-default shadow-sm sticky top-[80px]">
               <div className="flex items-center gap-sm mb-md text-primary">
-                <MIcon name="tips_and_updates" />
+                <FaIcon name="tips_and_updates" />
                 <h2 className="font-h2 text-h2">{isFr ? tx("Guide de Négociation") : 'Negotiation Guide'}</h2>
               </div>
               <p className="font-secondary text-secondary mb-md">
@@ -614,7 +614,7 @@ export default function NegotiationsPage() {
                 onClick={() => setEditModal(null)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 

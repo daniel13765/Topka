@@ -5,7 +5,7 @@ import { paymentsApi } from '../../../services/api';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -99,7 +99,7 @@ export default function ConfirmationPage() {
           {/* Success Animation Container */}
           <div className="relative mb-lg">
             <div className="w-20 h-20 bg-success-light rounded-full flex items-center justify-center z-10 relative">
-              <MIcon name="check" className="text-[40px] text-success" />
+              <FaIcon name="check" className="text-[40px] text-success" />
             </div>
             {/* Discrete Confetti Dots */}
             <div
@@ -189,7 +189,7 @@ export default function ConfirmationPage() {
               }
               className="w-full bg-primary-container text-white font-label font-bold h-[48px] rounded-lg flex items-center justify-center gap-sm hover:bg-primary-hover active:scale-95 transition-all shadow-md cursor-pointer"
             >
-              <MIcon name="map" className="text-[20px]" />
+              <FaIcon name="map" className="text-[20px]" />
               {tx("Suivre ma commande")}
             </button>
             <button
@@ -207,7 +207,7 @@ export default function ConfirmationPage() {
             onClick={() => toast(tx("Support client TOKPa — ouvert 7j/7"))}
             className="mt-lg flex items-center gap-xs font-label text-primary-container font-bold hover:underline transition-all cursor-pointer"
           >
-            <MIcon name="headset_mic" className="text-[18px]" />
+            <FaIcon name="headset_mic" className="text-[18px]" />
             {tx("Besoin d'aide ? Contactez le support")}
           </button>
 
@@ -223,7 +223,7 @@ export default function ConfirmationPage() {
               </span>
               <span className="text-micro text-primary">{tx("Obtenez 500 FCFA sur votre prochaine commande")}</span>
             </div>
-            <MIcon name="chevron_right" className="text-primary-dark" />
+            <FaIcon name="chevron_right" className="text-primary-dark" />
           </button>
         </div>
       </main>

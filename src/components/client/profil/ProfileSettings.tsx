@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -44,10 +44,10 @@ export default function ProfileSettings() {
             className="scale-interaction flex w-full items-center justify-between p-md text-left transition-colors hover:bg-surface"
           >
             <div className="flex items-center gap-md">
-              <MIcon name="lock" className="text-ink-2" />
+              <FaIcon name="lock" className="text-ink-2" />
               <span className="text-body font-medium text-ink">{t('profile.changePassword')}</span>
             </div>
-            <MIcon name="chevron_right" className="text-ink-3" />
+            <FaIcon name="chevron_right" className="text-ink-3" />
           </button>
 
           {/* Notifications */}
@@ -57,7 +57,7 @@ export default function ProfileSettings() {
             className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
           >
             <div className="flex items-center gap-md">
-              <MIcon name="notifications_active" className="text-ink-2" />
+              <FaIcon name="notifications_active" className="text-ink-2" />
               <span className="text-body font-medium text-ink">{t('profile.notificationsSms')}</span>
             </div>
             <span className="text-xs font-semibold text-success">{tx("Activées")}</span>
@@ -73,12 +73,12 @@ export default function ProfileSettings() {
             className="scale-interaction flex w-full items-center justify-between border-t border-line p-md text-left transition-colors hover:bg-surface"
           >
             <div className="flex items-center gap-md">
-              <MIcon name="language" className="text-ink-2" />
+              <FaIcon name="language" className="text-ink-2" />
               <span className="text-body font-medium text-ink">{t('profile.language')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-primary font-bold">
               <span className="text-xs">{language === 'fr' ? tx("Français (FR)") : 'English (EN)'}</span>
-              <MIcon name="sync" className="text-xs" />
+              <FaIcon name="sync" className="text-xs" />
             </div>
           </button>
 
@@ -88,7 +88,7 @@ export default function ProfileSettings() {
             onClick={handleLogout}
             className="scale-interaction flex w-full items-center gap-md border-t border-line p-md font-medium text-error transition-colors hover:bg-error-light"
           >
-            <MIcon name="logout" className="text-error" />
+            <FaIcon name="logout" className="text-error" />
             {t('profile.logout')}
           </button>
         </div>
@@ -105,7 +105,7 @@ export default function ProfileSettings() {
                 onClick={() => setPasswordOpen(false)}
                 className="rounded-full p-2 text-ink-2 hover:bg-page"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 

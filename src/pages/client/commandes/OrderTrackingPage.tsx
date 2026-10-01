@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import RealBeninMap from '../../../components/client/commandes/RealBeninMap';
 import { useRiderLocation } from '../../../hooks/useRiderLocation';
@@ -225,7 +225,7 @@ export default function OrderTrackingPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -263,12 +263,12 @@ export default function OrderTrackingPage() {
 
           {ordersLoading ? (
             <div className="py-2xl flex justify-center">
-              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
+              <FaIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
           ) : allOrders.length === 0 ? (
             <div className="py-xl">
               <EmptyState
-                icon={<MIcon name="local_shipping" className="text-4xl text-primary" />}
+                icon={<FaIcon name="local_shipping" className="text-4xl text-primary" />}
                 title={isFr ? tx("Aucune commande à suivre") : 'No orders to track'}
                 description={isFr ? tx("Vos commandes en cours apparaîtront ici.") : 'Your ongoing orders will appear here.'}
                 action={
@@ -285,7 +285,7 @@ export default function OrderTrackingPage() {
           ) : accessDenied ? (
             <div className="py-xl">
               <EmptyState
-                icon={<MIcon name="lock" className="text-4xl text-error-dark" />}
+                icon={<FaIcon name="lock" className="text-4xl text-error-dark" />}
                 title={isFr ? tx("Commande introuvable") : 'Order not found'}
                 description={
                   isFr
@@ -328,7 +328,7 @@ export default function OrderTrackingPage() {
                     }`}
                   >
                     {!isDelivered && !isCancelled && <span className="w-2.5 h-2.5 rounded-full bg-success animate-ping inline-block" />}
-                    {(isDelivered || isCancelled) && <MIcon name={isCancelled ? 'cancel' : 'check'} className="text-[14px]" />}
+                    {(isDelivered || isCancelled) && <FaIcon name={isCancelled ? 'cancel' : 'check'} className="text-[14px]" />}
                     <span className="text-label font-bold">
                       {isDelivered
                         ? isFr ? tx("Commande livrée") : 'Order delivered'
@@ -339,7 +339,7 @@ export default function OrderTrackingPage() {
                   </div>
                   {!isDelivered && !isCancelled && (
                     <div className="flex items-center gap-sm text-primary-container">
-                      <MIcon name="schedule" />
+                      <FaIcon name="schedule" />
                       <span className="font-h3 font-bold">
                         {estimatedMinutes === null
                           ? isFr
@@ -400,7 +400,7 @@ export default function OrderTrackingPage() {
                               : 'bg-white border-2 border-border-default text-border-default'
                         }`}
                       >
-                        <MIcon name={done ? 'check' : (step.icon as string)} className="text-[16px]" />
+                        <FaIcon name={done ? 'check' : (step.icon as string)} className="text-[16px]" />
                       </div>
                       <span
                         className={`text-micro mt-sm ${
@@ -449,7 +449,7 @@ export default function OrderTrackingPage() {
                       className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
                       title={isFr ? 'Appeler le livreur' : 'Call rider'}
                     >
-                      <MIcon name="call" />
+                      <FaIcon name="call" />
                     </a>
                   )}
                   <Link
@@ -457,7 +457,7 @@ export default function OrderTrackingPage() {
                     className="w-10 h-10 bg-white border border-border-default rounded-lg flex items-center justify-center text-primary-container active:scale-95 transition-transform"
                     title={isFr ? tx("Discuter") : 'Chat'}
                   >
-                    <MIcon name="chat" />
+                    <FaIcon name="chat" />
                   </Link>
                 </div>
               </div>

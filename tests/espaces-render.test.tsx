@@ -119,8 +119,11 @@ describe('espace client : amorçage', () => {
 
   it('affiche l’attente tant que la fiche produit n’a pas été chargée', () => {
     const html = rendu(ProductPage);
+    // Le spinner Font Awesome est un <svg> : on vérifie la structure plutôt qu’une longueur de chaîne.
     expect(html).toContain('animate-spin');
-    expect(html.length).toBeLessThan(400);
+    expect((html.match(/<svg/g) ?? []).length).toBe(1);
+    expect(html).not.toContain('FCFA');
+    expect(html).not.toContain('Quantité');
   });
 
   it('verrouille les notifications tant que la session n’est pas résolue', () => {

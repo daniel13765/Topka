@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -115,7 +115,7 @@ export default function ProfileLandmarks() {
           onClick={openAdd}
           className="scale-interaction flex items-center gap-1 font-label text-xs font-bold text-primary hover:underline sm:text-sm"
         >
-          <MIcon name="add_location_alt" className="text-sm" />
+          <FaIcon name="add_location_alt" className="text-sm" />
           {t('profile.addLandmark')}
         </button>
       </div>
@@ -128,7 +128,7 @@ export default function ProfileLandmarks() {
           >
             <div className="flex items-start gap-md sm:items-center">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-lighter text-primary-dark">
-                <MIcon name={l.icon} className="text-[20px]" />
+                <FaIcon name={l.icon} className="text-[20px]" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -153,7 +153,7 @@ export default function ProfileLandmarks() {
                 onClick={() => openEdit(l)}
                 className="scale-interaction rounded-lg p-2 text-primary hover:bg-primary-lighter"
               >
-                <MIcon name="edit" className="text-sm" />
+                <FaIcon name="edit" className="text-sm" />
               </button>
               <button
                 type="button"
@@ -161,7 +161,7 @@ export default function ProfileLandmarks() {
                 onClick={() => handleDelete(l.id)}
                 className="scale-interaction rounded-lg p-2 text-error hover:bg-error-light"
               >
-                <MIcon name="delete" className="text-sm" />
+                <FaIcon name="delete" className="text-sm" />
               </button>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ProfileLandmarks() {
                 onClick={() => setEditOpen(false)}
                 className="rounded-full p-2 text-ink-2 hover:bg-page"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 

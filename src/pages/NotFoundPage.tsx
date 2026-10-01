@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import ClientNavbar from '../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../components/layout/client/ClientBottomNav';
-import MIcon from '../components/shared/MIcon';
+import FaIcon from '../components/shared/FaIcon';
 import { useLanguage } from '../context/LanguageContext';
 import { tx } from '../i18n/tx';
 
@@ -42,10 +42,9 @@ export default function NotFoundPage() {
           {/* Icon/Visual Element */}
           <div className="flex justify-center mb-md">
             <div className="w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300">
-              <MIcon
+              <FaIcon
                 name="storefront"
                 className="text-on-primary-container text-[48px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
               />
             </div>
           </div>
@@ -77,7 +76,7 @@ export default function NotFoundPage() {
               to="/"
               className="group w-full sm:w-auto flex items-center justify-center gap-xs px-lg py-3 bg-primary-container text-white font-h3 rounded-xl active:scale-[0.97] transition-all hover:bg-primary-hover shadow-md cursor-pointer"
             >
-              <MIcon name="home" />
+              <FaIcon name="home" />
               <span>{isFr ? tx("Retour à l'accueil") : 'Back to home'}</span>
             </Link>
 
@@ -85,7 +84,7 @@ export default function NotFoundPage() {
               to="/catalogue"
               className="w-full sm:w-auto flex items-center justify-center gap-xs px-lg py-3 bg-surface border-2 border-primary-container text-primary font-h3 rounded-xl active:scale-[0.97] transition-all hover:bg-primary-tint cursor-pointer"
             >
-              <MIcon name="grid_view" />
+              <FaIcon name="grid_view" />
               <span>{isFr ? 'Explorer le catalogue' : 'Explore catalog'}</span>
             </Link>
           </div>
@@ -93,10 +92,10 @@ export default function NotFoundPage() {
           {/* Interaction Layer: Small Floating Elements */}
           <div className="hidden lg:block pointer-events-none">
             <div className="absolute -top-12 -left-12 animate-bounce transition-all duration-1000">
-              <MIcon name="shopping_bag" className="text-primary-light text-4xl opacity-40" />
+              <FaIcon name="shopping_bag" className="text-primary-light text-4xl opacity-40" />
             </div>
             <div className="absolute -bottom-12 -right-12 animate-pulse transition-all duration-700">
-              <MIcon name="receipt_long" className="text-primary-light text-4xl opacity-40" />
+              <FaIcon name="receipt_long" className="text-primary-light text-4xl opacity-40" />
             </div>
           </div>
         </div>

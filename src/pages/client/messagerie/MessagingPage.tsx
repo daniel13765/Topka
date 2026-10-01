@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -222,7 +222,7 @@ export default function MessagingPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -269,7 +269,7 @@ export default function MessagingPage() {
               type="button"
               className="text-primary-container hover:bg-primary-tint p-sm rounded-lg transition-all active:scale-[0.97] cursor-pointer"
             >
-              <MIcon name="edit_square" />
+              <FaIcon name="edit_square" />
             </button>
           </div>
 
@@ -278,7 +278,7 @@ export default function MessagingPage() {
             {conversations.length === 0 ? (
               <div className="p-md">
                 <div className="bg-bg-app border border-border-default rounded-lg p-md text-center">
-                  <MIcon name="chat_bubble_outline" className="text-3xl text-text-tertiary mb-2" />
+                  <FaIcon name="chat_bubble_outline" className="text-3xl text-text-tertiary mb-2" />
                   <p className="font-label text-label text-text-secondary font-bold">
                     {isFr ? tx("Aucune conversation") : 'No conversation'}
                   </p>
@@ -348,7 +348,7 @@ export default function MessagingPage() {
                   href={`tel:${activeOrder.phone.replace(/\s/g, '')}`}
                   className="p-sm text-text-secondary hover:bg-primary-tint hover:text-primary-container rounded-lg transition-all"
                 >
-                  <MIcon name="call" />
+                  <FaIcon name="call" />
                 </a>
               )}
               {activeConvId && (
@@ -357,7 +357,7 @@ export default function MessagingPage() {
                   search={{ order: String(activeConvId) }}
                   className="p-sm text-text-secondary hover:bg-primary-tint hover:text-primary-container rounded-lg transition-all"
                 >
-                  <MIcon name="map" />
+                  <FaIcon name="map" />
                 </Link>
               )}
             </div>
@@ -367,7 +367,7 @@ export default function MessagingPage() {
           {activeOrder && (
             <div className="m-md px-md py-sm bg-primary-tint border border-primary-light rounded-lg flex justify-between items-center">
               <div className="flex items-center gap-sm">
-                <MIcon name="shopping_bag" className="text-primary-container" />
+                <FaIcon name="shopping_bag" className="text-primary-container" />
                 <span className="font-label text-label text-text-main">
                   {isFr ? tx("Commande") : 'Order'}{' '}
                   <strong className="text-primary-container">#TOK-{activeOrder.orderId}</strong> ·{' '}
@@ -388,7 +388,7 @@ export default function MessagingPage() {
           <div className="flex-1 overflow-y-auto px-lg pb-xl flex flex-col gap-md">
             {messages.length === 0 ? (
               <div className="m-auto text-center">
-                <MIcon name="chat" className="text-5xl text-text-tertiary mb-3" />
+                <FaIcon name="chat" className="text-5xl text-text-tertiary mb-3" />
                 <p className="font-label text-label text-text-secondary font-bold">
                   {isFr ? tx("Début de la conversation") : 'Start of the conversation'}
                 </p>
@@ -432,7 +432,7 @@ export default function MessagingPage() {
           {/* Input Area */}
           <footer className="bg-bg-card border-t border-border-default p-md md:px-lg flex items-center gap-md">
             <button type="button" className="text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer">
-              <MIcon name="attach_file" />
+              <FaIcon name="attach_file" />
             </button>
             <form onSubmit={handleSendMessage} className="flex-1 bg-bg-app rounded-full px-md flex items-center">
               <input
@@ -446,7 +446,7 @@ export default function MessagingPage() {
                 type="button"
                 className="text-text-tertiary hover:text-primary-container transition-colors ml-sm cursor-pointer"
               >
-                <MIcon name="mood" />
+                <FaIcon name="mood" />
               </button>
             </form>
             <button
@@ -455,7 +455,7 @@ export default function MessagingPage() {
               disabled={!activeConvId}
               className="w-10 h-10 bg-primary-container text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-hover active:scale-95 transition-all cursor-pointer disabled:opacity-40"
             >
-              <MIcon name="send" style={{ fontVariationSettings: "'FILL' 1" }} />
+              <FaIcon name="send" />
             </button>
           </footer>
         </section>

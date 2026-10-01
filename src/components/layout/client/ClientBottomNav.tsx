@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -31,7 +31,7 @@ export default function ClientBottomNav() {
           isHome ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
         }`}
       >
-        <MIcon name="home" className="text-[20px]" />
+        <FaIcon name="home" className="text-[20px]" />
         <span className="font-micro text-micro">{t('nav.home')}</span>
       </Link>
 
@@ -41,7 +41,7 @@ export default function ClientBottomNav() {
           isCatalogue ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
         }`}
       >
-        <MIcon name="category" className="text-[20px]" />
+        <FaIcon name="category" className="text-[20px]" />
         <span className="font-micro text-micro">{t('nav.categories')}</span>
       </Link>
 
@@ -52,7 +52,7 @@ export default function ClientBottomNav() {
         }`}
       >
         <div className="relative">
-          <MIcon name="handshake" className="text-[20px]" />
+          <FaIcon name="handshake" className="text-[20px]" />
           {activeNegoCount > 0 && (
             <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white">
               {activeNegoCount}
@@ -69,7 +69,7 @@ export default function ClientBottomNav() {
         }`}
       >
         <div className="relative">
-          <MIcon name="shopping_cart" className="text-[20px]" />
+          <FaIcon name="shopping_cart" className="text-[20px]" />
           {cartCount > 0 && (
             <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-container text-[9px] font-bold text-white">
               {cartCount > 9 ? '9+' : cartCount}
@@ -85,7 +85,7 @@ export default function ClientBottomNav() {
           isProfil ? 'bg-primary-lighter text-primary-shade font-semibold' : 'text-on-surface-variant hover:text-on-surface'
         }`}
       >
-        <MIcon name={hasSession() ? "person" : "login"} className="text-[20px]" />
+        <FaIcon name={hasSession() ? "person" : "login"} className="text-[20px]" />
         <span className="font-micro text-micro">{hasSession() ? t('nav.profile') : t('auth.loginBtn')}</span>
       </Link>
     </nav>

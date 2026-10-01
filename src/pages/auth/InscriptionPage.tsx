@@ -4,7 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -192,7 +192,7 @@ export default function InscriptionPage() {
                   step === 1 ? 'bg-primary-container text-white' : 'bg-success text-white',
                 )}
               >
-                {step === 1 ? '1' : <MIcon name="check" className="text-sm" />}
+                {step === 1 ? '1' : <FaIcon name="check" className="text-sm" />}
               </div>
               <span className={clsx('text-xs font-bold', step === 1 ? 'text-primary-container' : 'text-success')}>
                 {tx("Profil")}
@@ -223,7 +223,7 @@ export default function InscriptionPage() {
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Prénom")}</label>
                   <div className="relative">
-                    <MIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                    <FaIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
                       type="text"
                       placeholder="Ex: Jean"
@@ -240,7 +240,7 @@ export default function InscriptionPage() {
                 <div>
                   <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Nom de famille")}</label>
                   <div className="relative">
-                    <MIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                    <FaIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
                       type="text"
                       placeholder="Ex: Dossou"
@@ -258,7 +258,7 @@ export default function InscriptionPage() {
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Adresse email")}</label>
                 <div className="relative">
-                  <MIcon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <FaIcon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
                     type="email"
                     placeholder="jean.dossou@email.com"
@@ -275,7 +275,7 @@ export default function InscriptionPage() {
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Numéro de téléphone (+229)")}</label>
                 <div className="relative">
-                  <MIcon name="call" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <FaIcon name="call" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
                     type="tel"
                     placeholder="90000000"
@@ -292,7 +292,7 @@ export default function InscriptionPage() {
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Ville / Zone")}</label>
                 <div className="relative">
-                  <MIcon name="location_on" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <FaIcon name="location_on" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <select
                     value={profil.ville}
                     onChange={(e) => setProfilField('ville', e.target.value)}
@@ -306,7 +306,7 @@ export default function InscriptionPage() {
                       </option>
                     ))}
                   </select>
-                  <MIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                  <FaIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
                 </div>
                 {profilErrors.ville && <p className="mt-1 text-xs text-error">{profilErrors.ville}</p>}
               </div>
@@ -316,7 +316,7 @@ export default function InscriptionPage() {
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6"
               >
                 <span>{tx("Continuer")}</span>
-                <MIcon name="arrow_forward" />
+                <FaIcon name="arrow_forward" />
               </button>
 
               <p className="text-center text-xs text-text-secondary mt-4">
@@ -334,7 +334,7 @@ export default function InscriptionPage() {
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Mot de passe")}</label>
                 <div className="relative">
-                  <MIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <FaIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••••••"
@@ -349,7 +349,7 @@ export default function InscriptionPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-main cursor-pointer"
                   >
-                    <MIcon name={showPassword ? 'visibility_off' : 'visibility'} className="text-sm" />
+                    <FaIcon name={showPassword ? 'visibility_off' : 'visibility'} className="text-sm" />
                   </button>
                 </div>
 
@@ -373,7 +373,7 @@ export default function InscriptionPage() {
               <div>
                 <label className="block text-xs font-medium text-text-secondary mb-1">{tx("Confirmer le mot de passe")}</label>
                 <div className="relative">
-                  <MIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                  <FaIcon name="lock" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••••••"
@@ -442,7 +442,7 @@ export default function InscriptionPage() {
                 className="w-full bg-primary-container hover:bg-primary-hover text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer mt-6 disabled:opacity-50"
               >
                 <span>{loading ? tx("Création...") : 'Créer mon compte'}</span>
-                <MIcon name="arrow_forward" />
+                <FaIcon name="arrow_forward" />
               </button>
 
               <button
@@ -450,7 +450,7 @@ export default function InscriptionPage() {
                 onClick={() => setStep(1)}
                 className="mx-auto flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-main transition-colors mt-3 cursor-pointer"
               >
-                <MIcon name="arrow_back" className="text-sm" />
+                <FaIcon name="arrow_back" className="text-sm" />
                 {tx("Retour à l'étape 1 (Profil)")}
               </button>
             </form>
@@ -461,10 +461,10 @@ export default function InscriptionPage() {
       {/* Trust Footer */}
       {step === 2 && (
         <p className="mt-4 flex items-center gap-2 text-xs text-text-tertiary">
-          <MIcon name="verified_user" className="text-success text-sm" />
+          <FaIcon name="verified_user" className="text-success text-sm" />
           {tx("Données chiffrées SSL")}
           <span>•</span>
-          <MIcon name="lock" className="text-primary-container text-sm" />
+          <FaIcon name="lock" className="text-primary-container text-sm" />
           {tx("Conforme APDP Bénin")}
         </p>
       )}

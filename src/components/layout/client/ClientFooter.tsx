@@ -19,7 +19,7 @@ export default function ClientFooter() {
       <div className="mx-auto flex max-w-[1200px] flex-col justify-between gap-lg md:flex-row md:items-center">
         <div className="flex flex-col gap-sm">
           <span className="text-h3 font-medium text-primary">TOKPa</span>
-          <p className="text-secondary text-ink-2">© 2024 TOKPa. {isFr ? tx("Tous droits réservés.") : 'All rights reserved.'}</p>
+          <p className="text-secondary text-ink-2">© {new Date().getFullYear()} TOKPa. {isFr ? tx("Tous droits réservés.") : 'All rights reserved.'}</p>
         </div>
         <nav className="flex flex-wrap gap-lg">
           {links.map((item) => (

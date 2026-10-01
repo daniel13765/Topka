@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import OtpInput from '../../components/auth/OtpInput';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -99,7 +99,7 @@ export default function Verification2faPage() {
       <div className="w-full max-w-[440px] rounded-2xl bg-white p-6 md:p-8 shadow-sm border border-border-default">
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-tint border border-primary-light">
-            <MIcon name="mark_email_read" className="text-primary-container text-[36px]" />
+            <FaIcon name="mark_email_read" className="text-primary-container text-[36px]" />
           </div>
           <h1 className="mb-1 text-h2 font-bold text-text-main">{tx("Vérifiez votre email")}</h1>
           <p className="max-w-[300px] text-xs text-text-secondary leading-relaxed">
@@ -113,7 +113,7 @@ export default function Verification2faPage() {
 
           <div className="flex flex-col items-center gap-2">
             <span className="flex items-center gap-1.5 rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-2 text-xs font-semibold text-amber-text">
-              <MIcon name="schedule" className="text-sm" />
+              <FaIcon name="schedule" className="text-sm" />
               {expired ? tx("Code expiré") : tr(`Le code expire dans ${formatTime(secondsLeft)}`, `The code expires in ${formatTime(secondsLeft)}`)}
             </span>
           </div>

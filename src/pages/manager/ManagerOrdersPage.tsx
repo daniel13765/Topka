@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -217,7 +217,7 @@ export default function ManagerOrdersPage() {
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">Commande #{selection.id}</h3>
               <button type="button" onClick={() => setSelection(null)} className="p-1 text-text-secondary hover:text-on-surface">
-                <MIcon name="close" className="text-[20px]" />
+                <FaIcon name="close" className="text-[20px]" />
               </button>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">
@@ -277,7 +277,7 @@ export default function ManagerOrdersPage() {
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">Assigner un livreur — #{assignation.id}</h3>
               <button type="button" onClick={() => setAssignation(null)} className="p-1 text-text-secondary hover:text-on-surface">
-                <MIcon name="close" className="text-[20px]" />
+                <FaIcon name="close" className="text-[20px]" />
               </button>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto p-4 text-label">

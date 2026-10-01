@@ -4,7 +4,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import { alertApiError } from '../../../utils/apiError';
 import { parseLandmarks } from '../../../utils/landmarks';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -149,7 +149,7 @@ export default function ProfilePage() {
             aria-label={tx("Se connecter")}
           >
             <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-tint text-primary-shade">
-              <MIcon name="login" className="text-[48px]" />
+              <FaIcon name="login" className="text-[48px]" />
             </span>
             <h1 className="font-h2 text-h2 font-bold">{tx("Connectez-vous pour voir votre profil")}</h1>
             <p className="max-w-sm text-sm text-text-secondary">
@@ -290,7 +290,7 @@ export default function ProfilePage() {
       <main className="max-w-[720px] mx-auto mt-[76px] px-md">
         {isDataLoading ? (
           <div className="py-2xl flex justify-center">
-            <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+            <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
           </div>
         ) : (
           <>
@@ -304,12 +304,12 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap items-center gap-sm">
                     <h2 className="font-h2 text-h2 text-text-main font-bold">{userFullName}</h2>
                     <span className="inline-flex items-center gap-xs px-sm py-1 bg-success-light text-success text-micro rounded-full font-bold uppercase tracking-wider">
-                      <MIcon name="verified_user" className="!text-xs" style={{ fontVariationSettings: "'FILL' 1" }} />
+                      <FaIcon name="verified_user" className="!text-xs" />
                       {userRole}
                     </span>
                   </div>
                   <div className="flex items-center text-text-secondary mt-1">
-                    <MIcon name="mail" className="text-sm mr-1" />
+                    <FaIcon name="mail" className="text-sm mr-1" />
                     <span className="text-secondary">{profile?.email || tx("Non renseigné")}</span>
                   </div>
                 </div>
@@ -319,7 +319,7 @@ export default function ProfilePage() {
                 onClick={handleOpenEditProfile}
                 className="px-md py-sm bg-white border border-border-default text-text-secondary rounded-lg font-label text-label flex items-center gap-sm transition-all hover:bg-bg-secondary cursor-pointer"
               >
-                <MIcon name="edit" className="text-sm" />
+                <FaIcon name="edit" className="text-sm" />
                 {isFr ? tx("Modifier") : 'Edit'}
               </button>
             </section>
@@ -351,14 +351,14 @@ export default function ProfilePage() {
                   onClick={handleOpenAdd}
                   className="flex items-center gap-xs text-primary-container font-bold text-label cursor-pointer hover:underline"
                 >
-                  <MIcon name="add" className="text-lg" />
+                  <FaIcon name="add" className="text-lg" />
                   {isFr ? tx("Ajouter") : 'Add'}
                 </button>
               </div>
 
               {landmarks.length === 0 ? (
                 <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
-                  <MIcon name="location_on" className="text-3xl text-text-tertiary mb-2" />
+                  <FaIcon name="location_on" className="text-3xl text-text-tertiary mb-2" />
                   <p className="text-sm font-semibold">
                     {isFr ? tx("Aucun point de repère enregistré") : 'No landmarks saved'}
                   </p>
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                     {landmarks.map((lm) => (
                       <div key={lm.key} className="p-md flex items-center gap-md">
                         <div className="w-10 h-10 rounded-full bg-primary-tint flex items-center justify-center text-primary-dark flex-shrink-0">
-                          <MIcon name="location_on" />
+                          <FaIcon name="location_on" />
                         </div>
                         <div className="flex-grow min-w-0">
                           <p className="font-bold text-text-main truncate">{lm.nom}</p>
@@ -388,7 +388,7 @@ export default function ProfilePage() {
                           className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-default text-text-secondary hover:bg-bg-secondary transition-colors cursor-pointer"
                           title={isFr ? tx("Modifier") : 'Edit'}
                         >
-                          <MIcon name="edit" className="text-sm" />
+                          <FaIcon name="edit" className="text-sm" />
                         </button>
                         <button
                           type="button"
@@ -396,7 +396,7 @@ export default function ProfilePage() {
                           className="w-9 h-9 flex items-center justify-center rounded-lg border border-error/30 text-error hover:bg-error-light transition-colors cursor-pointer"
                           title={isFr ? tx("Supprimer") : 'Delete'}
                         >
-                          <MIcon name="delete" className="text-sm" />
+                          <FaIcon name="delete" className="text-sm" />
                         </button>
                       </div>
                     ))}
@@ -421,7 +421,7 @@ export default function ProfilePage() {
 
               {recentOrders.length === 0 ? (
                 <div className="bg-bg-card p-lg rounded-[10px] border border-border-default text-center text-text-secondary">
-                  <MIcon name="shopping_bag" className="text-3xl text-text-tertiary mb-2" />
+                  <FaIcon name="shopping_bag" className="text-3xl text-text-tertiary mb-2" />
                   <p className="text-sm font-semibold">{tx("Aucune commande enregistrée")}</p>
                   <p className="text-xs text-text-tertiary mt-1">
                     {tx("Vos commandes apparaîtront ici une fois validées.")}
@@ -453,7 +453,7 @@ export default function ProfilePage() {
                             className="text-primary-container font-label text-label flex items-center gap-xs font-bold"
                           >
                             {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
-                            <MIcon name="chevron_right" className="text-sm" />
+                            <FaIcon name="chevron_right" className="text-sm" />
                           </Link>
                         </div>
                       </div>
@@ -475,12 +475,12 @@ export default function ProfilePage() {
                   className="w-full p-md flex items-center justify-between hover:bg-bg-secondary transition-colors text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-md">
-                    <MIcon name="lock" className="text-text-secondary" />
+                    <FaIcon name="lock" className="text-text-secondary" />
                     <span className="text-body text-text-main">
                       {isFr ? tx("Changer mot de passe") : 'Change password'}
                     </span>
                   </div>
-                  <MIcon name="chevron_right" className="text-text-tertiary" />
+                  <FaIcon name="chevron_right" className="text-text-tertiary" />
                 </button>
 
                 <Link
@@ -488,10 +488,10 @@ export default function ProfilePage() {
                   className="w-full p-md flex items-center justify-between border-t border-border-default hover:bg-bg-secondary transition-colors text-left"
                 >
                   <div className="flex items-center gap-md">
-                    <MIcon name="notifications_active" className="text-text-secondary" />
+                    <FaIcon name="notifications_active" className="text-text-secondary" />
                     <span className="text-body text-text-main">Notifications</span>
                   </div>
-                  <MIcon name="chevron_right" className="text-text-tertiary" />
+                  <FaIcon name="chevron_right" className="text-text-tertiary" />
                 </Link>
 
                 <button
@@ -500,12 +500,12 @@ export default function ProfilePage() {
                   className="w-full p-md flex items-center justify-between border-t border-border-default hover:bg-bg-secondary transition-colors text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-md">
-                    <MIcon name="language" className="text-text-secondary" />
+                    <FaIcon name="language" className="text-text-secondary" />
                     <span className="text-body text-text-main">{isFr ? tx("Langue") : 'Language'}</span>
                   </div>
                   <div className="flex items-center gap-sm">
                     <span className="text-secondary text-text-tertiary font-bold uppercase">{language}</span>
-                    <MIcon name="chevron_right" className="text-text-tertiary" />
+                    <FaIcon name="chevron_right" className="text-text-tertiary" />
                   </div>
                 </button>
 
@@ -514,7 +514,7 @@ export default function ProfilePage() {
                   onClick={handleLogout}
                   className="w-full p-md flex items-center gap-md border-t border-border-default hover:bg-error-light transition-colors text-error font-medium cursor-pointer"
                 >
-                  <MIcon name="logout" />
+                  <FaIcon name="logout" />
                   {isFr ? tx("Déconnexion") : 'Logout'}
                 </button>
               </div>
@@ -542,7 +542,7 @@ export default function ProfilePage() {
                 onClick={() => setLandmarkModalOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 
@@ -606,7 +606,7 @@ export default function ProfilePage() {
                 onClick={() => setEditProfileOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 
@@ -674,7 +674,7 @@ export default function ProfilePage() {
                 onClick={() => setPwModalOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 

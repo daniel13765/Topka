@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, fmtFcfa } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -64,7 +64,7 @@ export default function ManagerStatsPage() {
                     : 'border-border-default bg-white text-text-secondary hover:border-primary hover:text-primary'
                 }`}
               >
-                {p.param === 'jour' && <MIcon name="calendar_today" className="text-[16px]" />}
+                {p.param === 'jour' && <FaIcon name="calendar_today" className="text-[16px]" />}
                 {tx(p.label)}
               </button>
             ))}
@@ -83,7 +83,7 @@ export default function ManagerStatsPage() {
           {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
               <div className="flex items-center gap-2">
-                <MIcon name={k.icon} className="text-primary text-[20px]" />
+                <FaIcon name={k.icon} className="text-primary text-[20px]" />
                 <p className="text-label text-text-secondary">{tx(k.label)}</p>
               </div>
               <p className="mt-2 text-h1 font-h1 font-bold">

@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import Pagination from '../../../components/shared/Pagination';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -173,7 +173,7 @@ export default function OrdersListPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -212,12 +212,12 @@ export default function OrdersListPage() {
 
           {loading ? (
             <div className="py-2xl flex justify-center bg-white rounded-lg border border-border-default">
-              <MIcon name="sync" className="text-primary text-3xl animate-spin" />
+              <FaIcon name="sync" className="text-primary text-3xl animate-spin" />
             </div>
           ) : orders.length === 0 ? (
             <div className="py-xl bg-white rounded-lg border border-border-default">
               <EmptyState
-                icon={<MIcon name="receipt_long" className="text-4xl text-primary" />}
+                icon={<FaIcon name="receipt_long" className="text-4xl text-primary" />}
                 title={isFr ? tx("Aucune commande") : 'No orders yet'}
                 description={isFr ? tx("Vos commandes apparaîtront ici.") : 'Your orders will appear here.'}
                 action={
@@ -295,7 +295,7 @@ export default function OrdersListPage() {
                               }}
                               className="inline-flex items-center gap-xs px-md py-xs rounded-lg bg-primary-tint border border-primary-light text-primary-container text-micro font-bold hover:bg-primary-lighter active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                             >
-                              <MIcon name="near_me" className="text-[14px]" />
+                              <FaIcon name="near_me" className="text-[14px]" />
                               {isFr ? tx("Suivre") : 'Track'}
                             </button>
                           </td>
@@ -343,7 +343,7 @@ export default function OrdersListPage() {
                   aria-label={isFr ? tx("Fermer") : 'Close'}
                   className="w-8 h-8 rounded-button border border-line flex items-center justify-center hover:bg-white transition-colors cursor-pointer"
                 >
-                  <MIcon name="close" className="text-[18px]" />
+                  <FaIcon name="close" className="text-[18px]" />
                 </button>
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function OrdersListPage() {
               <section>
                 <h3 className="label text-text-main mb-sm flex items-center gap-xs">
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="shopping_bag" className="text-[16px]" />
+                    <FaIcon name="shopping_bag" className="text-[16px]" />
                   </span>
                   {isFr ? tx("Articles") : 'Items'}
                 </h3>
@@ -404,7 +404,7 @@ export default function OrdersListPage() {
               <section>
                 <h3 className="label text-text-main mb-sm flex items-center gap-xs">
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="local_shipping" className="text-[16px]" />
+                    <FaIcon name="local_shipping" className="text-[16px]" />
                   </span>
                   {isFr ? tx("Livraison") : 'Delivery'}
                 </h3>
@@ -440,7 +440,7 @@ export default function OrdersListPage() {
               <section>
                 <h3 className="label text-text-main mb-sm flex items-center gap-xs">
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-lighter text-primary-dark">
-                    <MIcon name="credit_card" className="text-[16px]" />
+                    <FaIcon name="credit_card" className="text-[16px]" />
                   </span>
                   {isFr ? tx("Paiement") : 'Payment'}
                 </h3>
@@ -464,12 +464,12 @@ export default function OrdersListPage() {
               <div className="flex gap-sm">
                 {!selected.payment && selected.statut !== 'annule' && (
                   <button type="button" onClick={() => handlePayer(selected)} disabled={paying} className="btn btn-primary flex-1 disabled:opacity-60">
-                    <MIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />
+                    <FaIcon name={paying ? 'sync' : 'payments'} className={paying ? 'animate-spin' : undefined} />
                     {isFr ? tx("Payer") : 'Pay'}
                   </button>
                 )}
                 <button type="button" onClick={() => handleSuivre(selected.id)} className="btn btn-primary flex-1">
-                  <MIcon name="near_me" />
+                  <FaIcon name="near_me" />
                   {isFr ? tx("Suivre cette commande") : 'Track this order'}
                 </button>
                 {selected.statut === "en_attente" && (
@@ -479,7 +479,7 @@ export default function OrdersListPage() {
                     disabled={cancelling}
                     className="btn btn-danger disabled:opacity-60"
                   >
-                    <MIcon name={cancelling ? 'sync' : 'cancel'} className={cancelling ? 'animate-spin' : undefined} />
+                    <FaIcon name={cancelling ? 'sync' : 'cancel'} className={cancelling ? 'animate-spin' : undefined} />
                     {isFr ? tx("Annuler") : 'Cancel'}
                   </button>
                 )}

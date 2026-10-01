@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import ManagerSidebar from './ManagerSidebar';
 import LangToggle from '../../shared/LangToggle';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -15,7 +15,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
       <ManagerSidebar currentPath={currentPath} />
       <header className="fixed left-64 right-0 top-0 z-40 flex h-[52px] items-center justify-between border-b border-border-default bg-bg-primary px-lg">
         <div className="flex items-center gap-2">
-          <MIcon name="location_on" className="text-primary text-[18px]" />
+          <FaIcon name="location_on" className="text-primary text-[18px]" />
           <p className="text-label font-semibold">{tx("Zone Akpakpa — Active")}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -24,7 +24,7 @@ export default function ManagerLayout({ children, currentPath }: Props) {
             type="button"
             className="rounded-lg p-2 text-text-secondary hover:bg-bg-secondary hover:text-on-surface"
           >
-            <MIcon name="notifications" className="text-[18px]" />
+            <FaIcon name="notifications" className="text-[18px]" />
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-tint text-overline font-bold text-primary">

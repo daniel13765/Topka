@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -57,7 +57,7 @@ export default function ProfileRecentOrders() {
                   className="flex items-center gap-0.5 text-xs font-bold text-primary hover:underline"
                 >
                   {o.active ? (isFr ? tx("Suivre") : 'Track') : (isFr ? tx("Détails") : 'Details')}
-                  <MIcon name="chevron_right" className="text-sm" />
+                  <FaIcon name="chevron_right" className="text-sm" />
                 </Link>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { add } from '../../../store/slices/cart/cartSlice';
 import { acceptCounterOffer, cancelNegotiation } from '../../../store/slices/negotiation/negotiationSlice';
@@ -55,7 +55,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
         <div className="flex items-center justify-between border-b border-line p-4 sm:p-md bg-warm">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-light text-amber-text">
-              <MIcon name="handshake" className="text-[22px]" />
+              <FaIcon name="handshake" className="text-[22px]" />
             </div>
             <div>
               <h2 className="font-h2 text-base sm:text-lg font-bold text-ink">
@@ -71,7 +71,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
             onClick={onClose}
             className="rounded-full p-2 text-ink-2 hover:bg-page transition-colors"
           >
-            <MIcon name="close" />
+            <FaIcon name="close" />
           </button>
         </div>
 
@@ -79,7 +79,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
         {totalSavings > 0 && (
           <div className="bg-success-light/70 px-4 py-2.5 border-b border-success/20 flex items-center justify-between text-xs font-semibold text-success-dark">
             <div className="flex items-center gap-1.5">
-              <MIcon name="payments" className="text-success" />
+              <FaIcon name="payments" className="text-success" />
               <span>{isFr ? 'Économies totales négociées :' : 'Total savings negotiated:'}</span>
             </div>
             <span className="font-bold text-sm text-primary">{totalSavings.toLocaleString('fr-FR')} FCFA</span>
@@ -90,7 +90,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
         <div className="p-4 sm:p-md overflow-y-auto space-y-3 flex-1">
           {history.length === 0 ? (
             <div className="py-12 text-center text-ink-2">
-              <MIcon name="handshake" className="mx-auto text-[48px] text-ink-3 mb-2" />
+              <FaIcon name="handshake" className="mx-auto text-[48px] text-ink-3 mb-2" />
               <p className="font-medium">{isFr ? 'Aucune négociation en cours' : 'No active negotiations'}</p>
               <p className="text-xs text-ink-3 mt-1">
                 {isFr ? 'Proposez un prix sur une fiche produit pour commencer à négocier !' : 'Make an offer on a product page to start bargaining!'}
@@ -108,7 +108,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
                       {neg.productImage ? (
                         <img src={neg.productImage} alt={neg.productName} className="h-full w-full object-cover" />
                       ) : (
-                        <MIcon name="image" className="text-ink-3" />
+                        <FaIcon name="image" className="text-ink-3" />
                       )}
                     </div>
                     <div>
@@ -179,7 +179,7 @@ export default function NegotiationModal({ isOpen, onClose }: NegotiationModalPr
                     className="rounded-lg p-1.5 text-xs text-ink-3 hover:text-error hover:bg-error-light transition-colors"
                     title={isFr ? 'Supprimer la négociation' : 'Delete negotiation'}
                   >
-                    <MIcon name="delete" className="text-sm" />
+                    <FaIcon name="delete" className="text-sm" />
                   </button>
                 </div>
               </div>

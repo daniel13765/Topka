@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import PasswordInput from '../../components/auth/PasswordInput';
 import { authApi } from '../../services/api';
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-[440px] rounded-2xl bg-white p-6 md:p-8 shadow-sm border border-border-default">
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary-tint border border-primary-light">
-            <MIcon name="lock_reset" className="text-primary-container text-[36px]" />
+            <FaIcon name="lock_reset" className="text-primary-container text-[36px]" />
           </div>
           <h1 className="mb-1 text-h2 font-bold text-text-main">{tx("Réinitialiser le mot de passe")}</h1>
           <p className="max-w-[320px] text-xs text-text-secondary leading-relaxed">

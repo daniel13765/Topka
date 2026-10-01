@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -53,12 +53,12 @@ export default function ProfileHeader() {
                 {user.prenom} {user.nom}
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full bg-success-light px-2.5 py-0.5 text-micro font-bold uppercase tracking-wider text-success-dark">
-                <MIcon name="verified_user" className="!text-[14px]" />
+                <FaIcon name="verified_user" className="!text-[14px]" />
                 {t('profile.verifiedClient')}
               </span>
             </div>
             <div className="mt-1 flex items-center text-ink-2">
-              <MIcon name="location_on" className="mr-1 text-sm text-primary" />
+              <FaIcon name="location_on" className="mr-1 text-sm text-primary" />
               <span className="text-xs font-medium sm:text-sm">
                 {user.ville} · {user.quartier}
               </span>
@@ -74,7 +74,7 @@ export default function ProfileHeader() {
           }}
           className="scale-interaction flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-2 transition-colors hover:bg-surface hover:text-ink sm:text-sm"
         >
-          <MIcon name="edit" className="text-sm" />
+          <FaIcon name="edit" className="text-sm" />
           {t('profile.editProfile')}
         </button>
       </section>
@@ -90,7 +90,7 @@ export default function ProfileHeader() {
                 onClick={() => setEditOpen(false)}
                 className="rounded-full p-2 text-ink-2 hover:bg-page"
               >
-                <MIcon name="close" />
+                <FaIcon name="close" />
               </button>
             </div>
 

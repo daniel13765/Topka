@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
 
@@ -94,13 +94,13 @@ export default function ManagerLitigesPage() {
                     </span>
                   ) : null}
                   <span className="flex items-center gap-1 text-text-secondary">
-                    <MIcon name="schedule" className="text-[16px]" />
+                    <FaIcon name="schedule" className="text-[16px]" />
                     {tx(l.temps)}
                   </span>
                 </div>
               </div>
               <p className="mt-2 flex items-center gap-2 text-label font-semibold">
-                <MIcon name={l.icon} className="text-[18px] text-primary" />
+                <FaIcon name={l.icon} className="text-[18px] text-primary" />
                 {tx(l.motif)}
               </p>
               {l.trajet && <p className="mt-1 text-label text-text-secondary">{l.trajet}</p>}

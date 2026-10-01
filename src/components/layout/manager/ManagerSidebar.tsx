@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { currentUserName, currentUserZone, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
@@ -26,14 +26,14 @@ export default function ManagerSidebar({ currentPath }: Props) {
       style={{ backgroundColor: 'rgb(31,19,11)' }}
     >
       <div className="flex items-center gap-2 p-lg pb-4">
-        <MIcon name="local_shipping" className="text-primary-tint text-[22px]" />
+        <FaIcon name="local_shipping" className="text-primary-tint text-[22px]" />
         <p className="text-lg font-bold text-white">
           TOKPa <span className="text-primary-tint">Manager</span>
         </p>
       </div>
       <div className="px-lg pb-3">
         <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2">
-          <MIcon name="location_on" className="text-primary-tint text-[18px]" />
+          <FaIcon name="location_on" className="text-primary-tint text-[18px]" />
           <div className="flex-1">
             {/* Vraie zone du manager connecté (UserResource.profil.zone) — plus de « Zone Akpakpa » inventée */}
             <p className="text-label font-semibold text-white">
@@ -55,7 +55,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
                 active ? 'bg-primary' : 'hover:bg-white/10'
               }`}
             >
-              <MIcon name={item.icon} className="text-[18px]" />
+              <FaIcon name={item.icon} className="text-[18px]" />
               <span className="flex-1">{tx(item.label)}</span>
               {item.badge && (
                 <span className="rounded-full bg-primary-container px-2 py-0.5 text-overline text-on-surface">
@@ -72,7 +72,7 @@ export default function ManagerSidebar({ currentPath }: Props) {
           to="/"
           className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-body text-white transition hover:bg-white/10"
         >
-          <MIcon name="storefront" className="text-[18px]" />
+          <FaIcon name="storefront" className="text-[18px]" />
           <span className="flex-1">{tx("Espace client")}</span>
         </Link>
         {/* Utilisateur réellement connecté (plus de « Serge Migan » inventé) */}

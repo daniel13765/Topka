@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { useAppDispatch } from '../../../hooks/useStore';
@@ -353,7 +353,7 @@ export default function CatalogPage() {
                       : 'text-on-surface-variant hover:bg-primary-lighter hover:text-primary',
                   )}
                 >
-                  <MIcon name={c.icon} className="text-[20px]" />
+                  <FaIcon name={c.icon} className="text-[20px]" />
                   <span className="text-label">{tx(c.nom)}</span>
                 </button>
               ))}
@@ -426,7 +426,7 @@ export default function CatalogPage() {
                   onClick={() => setMobileFilterOpen(false)}
                   className="rounded-full p-2 text-ink-2 hover:bg-page"
                 >
-                  <MIcon name="close" />
+                  <FaIcon name="close" />
                 </button>
               </div>
 
@@ -447,7 +447,7 @@ export default function CatalogPage() {
                           cat === c.id ? 'bg-primary-lighter font-bold text-primary' : 'bg-page text-ink-2',
                         )}
                       >
-                        <MIcon name={c.icon} className="text-[18px]" />
+                        <FaIcon name={c.icon} className="text-[18px]" />
                         <span className="truncate">{tx(c.nom)}</span>
                       </button>
                     ))}
@@ -545,7 +545,7 @@ export default function CatalogPage() {
                 onClick={() => setMobileFilterOpen(true)}
                 className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm md:hidden"
               >
-                <MIcon name="tune" className="text-[18px]" />
+                <FaIcon name="tune" className="text-[18px]" />
                 {tx("Filtres")}
               </button>
 
@@ -571,7 +571,7 @@ export default function CatalogPage() {
                   onClick={() => setView('grid')}
                   className={clsx('p-2', view === 'grid' ? 'border-r border-line bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
                 >
-                  <MIcon name="grid_view" className="text-[20px]" />
+                  <FaIcon name="grid_view" className="text-[20px]" />
                 </button>
                 <button
                   type="button"
@@ -579,7 +579,7 @@ export default function CatalogPage() {
                   onClick={() => setView('list')}
                   className={clsx('p-2', view === 'list' ? 'bg-warm text-primary' : 'text-ink-3 hover:bg-surface')}
                 >
-                  <MIcon name="view_list" className="text-[20px]" />
+                  <FaIcon name="view_list" className="text-[20px]" />
                 </button>
               </div>
             </div>
@@ -618,7 +618,7 @@ export default function CatalogPage() {
                     {p.image ? (
                       <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full object-cover" />
                     ) : (
-                      <MIcon name={p.icon} className="text-[40px] text-primary-hover" />
+                      <FaIcon name={p.icon} className="text-[40px] text-primary-hover" />
                     )}
                     {badges(p)}
                   </div>
@@ -643,7 +643,7 @@ export default function CatalogPage() {
                           }}
                           className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                         >
-                          <MIcon name="add" className="text-[20px]" />
+                          <FaIcon name="add" className="text-[20px]" />
                         </button>
                       )}
                     </div>
@@ -669,7 +669,7 @@ export default function CatalogPage() {
                       {p.image ? (
                         <img src={p.image} alt={p.nom} className="absolute inset-0 h-full w-full rounded-lg object-cover" />
                       ) : (
-                        <MIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
+                        <FaIcon name={p.icon} className="text-[28px] sm:text-[32px] text-primary-hover" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -719,7 +719,7 @@ export default function CatalogPage() {
                         }}
                         className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white transition-all hover:bg-primary-hover active:scale-95 shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                       >
-                        <MIcon name="add" className="text-[18px] sm:text-[20px]" />
+                        <FaIcon name="add" className="text-[18px] sm:text-[20px]" />
                       </button>
                     )}
                   </div>
@@ -737,7 +737,7 @@ export default function CatalogPage() {
               onClick={() => setPage(currentPage - 1)}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
             >
-              <MIcon name="chevron_left" />
+              <FaIcon name="chevron_left" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
               <button
@@ -761,7 +761,7 @@ export default function CatalogPage() {
               onClick={() => setPage(currentPage + 1)}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-on-surface-variant transition-all hover:border-line hover:bg-white disabled:opacity-40"
             >
-              <MIcon name="chevron_right" />
+              <FaIcon name="chevron_right" />
             </button>
           </div>
         </section>
@@ -772,7 +772,7 @@ export default function CatalogPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 text-ink-2">
           <div className="flex items-center gap-2">
             <span className="font-h3 text-primary">TOKPa</span>
-            <span className="text-micro">{tx("© 2026 - Le Marché Béninois en ligne")}</span>
+            <span className="text-micro">© {new Date().getFullYear()} - {tx("Le Marché Béninois en ligne")}</span>
           </div>
           <div className="hidden gap-lg sm:flex">
             <Link to="/profil" className="text-label transition-colors hover:text-primary">

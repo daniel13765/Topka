@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
@@ -137,7 +137,7 @@ export default function ProductPage() {
   if (isLoading) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -167,7 +167,7 @@ export default function ProductPage() {
         <main className="flex justify-center pt-[80px] px-md">
           <div className="w-full max-w-[560px] bg-white rounded-xl border border-border-default p-xl">
             <EmptyState
-              icon={<MIcon name="search_off" className="text-4xl text-primary" />}
+              icon={<FaIcon name="search_off" className="text-4xl text-primary" />}
               title="Produit introuvable"
               description={tx("Ce produit n’existe pas ou n’est plus disponible au marché.")}
               action={
@@ -233,7 +233,7 @@ export default function ProductPage() {
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-4 text-primary-hover">
-                    <MIcon name="flag_2" style={{ fontSize: 64 }} />
+                    <FaIcon name="flag_2" style={{ fontSize: 64 }} />
                     <span className="text-xs font-medium opacity-70">{tx("Photo bientôt disponible")}</span>
                   </div>
                 )}
@@ -277,7 +277,7 @@ export default function ProductPage() {
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="border-r border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
-                    <MIcon name="remove" className="text-[18px]" />
+                    <FaIcon name="remove" className="text-[18px]" />
                   </button>
                   <span className="px-6 py-1 font-semibold text-ink">{quantity}</span>
                   <button
@@ -286,7 +286,7 @@ export default function ProductPage() {
                     onClick={() => setQuantity((q) => q + 1)}
                     className="border-l border-line p-2 text-ink transition-colors hover:bg-surface cursor-pointer"
                   >
-                    <MIcon name="add" className="text-[18px]" />
+                    <FaIcon name="add" className="text-[18px]" />
                   </button>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function ProductPage() {
               <div className="flex flex-col gap-4 rounded-lg border-l-[3px] border-[#F59E0B] bg-[#FFFBEB] p-4 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <MIcon name="payments" className="text-[#F59E0B]" />
+                    <FaIcon name="payments" className="text-[#F59E0B]" />
                     <h3 className="text-sm font-semibold uppercase tracking-tight text-[#92400E]">
                       {tx("Proposer votre budget")}
                     </h3>
@@ -315,7 +315,7 @@ export default function ProductPage() {
                           {product.prix.toLocaleString('fr-FR')} FCFA
                         </p>
                       </div>
-                      <MIcon name="sync" className="rotate-90 text-[#F59E0B]" />
+                      <FaIcon name="sync" className="rotate-90 text-[#F59E0B]" />
                       <div className="flex-1 rounded-lg border border-dashed border-[#F59E0B] bg-amber-light p-3 text-center">
                         <p className="mb-1 text-[10px] uppercase text-amber-text">{tx("Votre offre")}</p>
                         <div className="flex items-center justify-center gap-1 font-bold text-ink">
@@ -349,7 +349,7 @@ export default function ProductPage() {
                 {activeNeg?.status === 'pending' && (
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
-                      <MIcon name="hourglass_top" className="text-amber-text" />
+                      <FaIcon name="hourglass_top" className="text-amber-text" />
                       <span className="text-xs font-bold uppercase tracking-wider">{tx("Offre en attente")}</span>
                     </div>
                     <p className="text-xs text-ink">
@@ -366,7 +366,7 @@ export default function ProductPage() {
                 {activeNeg?.status === 'accepted' && (
                   <div className="space-y-3 rounded-lg border border-success/40 bg-success-light/50 p-3">
                     <div className="flex items-center gap-2 text-success-dark">
-                      <MIcon name="verified" className="text-success" />
+                      <FaIcon name="verified" className="text-success" />
                       <span className="text-xs font-bold uppercase tracking-wider">{tx("Offre acceptée !")}</span>
                     </div>
                     <p className="text-xs text-ink">
@@ -399,7 +399,7 @@ export default function ProductPage() {
                 {activeNeg?.status === 'counter_offer' && (
                   <div className="space-y-3 rounded-lg border border-amber-text/40 bg-amber-light p-3">
                     <div className="flex items-center gap-2 text-amber-text">
-                      <MIcon name="sync" className="text-amber-text" />
+                      <FaIcon name="sync" className="text-amber-text" />
                       <span className="text-xs font-bold uppercase tracking-wider">{tx("Contre-offre du marché")}</span>
                     </div>
                     <p className="text-xs text-ink">
@@ -460,7 +460,7 @@ export default function ProductPage() {
                   disabled={unavailable}
                   className="flex w-full transform items-center justify-center gap-2 rounded-[10px] bg-primary py-3.5 font-bold text-white transition-all hover:bg-primary-hover active:scale-[0.98] cursor-pointer disabled:opacity-50"
                 >
-                  <MIcon name="shopping_cart" />
+                  <FaIcon name="shopping_cart" />
                   Ajouter au panier ({product.prix.toLocaleString('fr-FR')} FCFA)
                 </button>
                 <button
@@ -535,7 +535,7 @@ export default function ProductPage() {
             {tab === 'origine' && (
               <div className="flex flex-col gap-4 p-4 md:p-8">
                 <EmptyState
-                  icon={<MIcon name="travel_explore" className="text-4xl text-primary" />}
+                  icon={<FaIcon name="travel_explore" className="text-4xl text-primary" />}
                   title={tx("Origine non renseignée")}
                   description={tx("L’origine et la traçabilité des produits ne sont pas encore fournies par la plateforme. Elles s’afficheront ici dès qu’elles seront disponibles.")}
                 />
@@ -545,7 +545,7 @@ export default function ProductPage() {
             {tab === 'avis' && (
               <div className="flex flex-col gap-4 p-4 md:p-8">
                 <EmptyState
-                  icon={<MIcon name="mode_comment" className="text-4xl text-primary" />}
+                  icon={<FaIcon name="mode_comment" className="text-4xl text-primary" />}
                   title={tx("Aucun avis pour le moment")}
                   description={tx("Le système d’avis clients arrive prochainement. Vos retours après livraison nous aident à faire progresser le marché.")}
                 />

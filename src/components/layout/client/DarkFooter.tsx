@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
 
@@ -74,7 +74,7 @@ export default function DarkFooter() {
               className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade cursor-pointer"
               aria-label="Facebook"
             >
-              <MIcon name="face_nod" />
+              <FaIcon name="face_nod" />
             </button>
             <button
               type="button"
@@ -82,14 +82,14 @@ export default function DarkFooter() {
               className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface-variant transition-colors hover:bg-primary-shade cursor-pointer"
               aria-label={tx("Partager")}
             >
-              <MIcon name="share" />
+              <FaIcon name="share" />
             </button>
           </div>
         </div>
       </div>
 
       <div className="mx-auto mt-xl max-w-[1200px] border-t border-on-surface-variant px-4 pt-lg text-center text-label text-surface-variant">
-        © 2026 TOKPa. {isFr ? tx("Tous droits réservés.") : 'All rights reserved.'} Cotonou, Bénin.
+        © {new Date().getFullYear()} TOKPa. {isFr ? tx("Tous droits réservés.") : 'All rights reserved.'} Cotonou, Bénin.
       </div>
     </footer>
   );

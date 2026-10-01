@@ -15,8 +15,21 @@ Cette version conserve la direction visuelle TOKPa tout en intégrant l’archit
 - Laravel Echo + Pusher pour Reverb
 - Leaflet / React Leaflet pour le repli cartographique, Google Maps quand une clé est fournie
 - jsPDF pour le reçu de course
-- Fontsource Inter et Material Symbols
-- Vitest (environnement `node`) : règles métier, rendu serveur des écrans, garde de découpage du bundle
+- Fontsource Inter ; icônes Font Awesome (`@fortawesome/react-fontawesome`) dans les espaces client, manager et livreur
+- Vitest (environnement `node`) : règles métier, rendu serveur des écrans, garde de découpage du bundle, couverture du jeu d’icônes
+
+### Icônes
+
+TOKPa rend ses icônes par `src/components/shared/FaIcon.tsx`, qui traduit un nom de ligature
+(celles de la maquette d’origine, ex. `shopping_cart`) vers une icône Font Awesome du jeu gratuit.
+La table couvre les noms utilisés par le code et ceux que le backend peut envoyer dans le champ
+`icone` d’une catégorie ; un nom inconnu retombe sur `faCircleQuestion`, donc
+`tests/fa-icones-couvertes.test.ts` échoue dès qu’un écran client ou manager appelle un nom absent
+de la table, ou réintroduit une ligature Material Symbols.
+
+Exception assumée : l’espace **administration** (`src/pages/admin`, `src/components/layout/admin`)
+utilise encore `MIcon` et la police Material Symbols, parce que ses écrans sont la copie conforme
+du dépôt de référence ; la bascule est un lot distinct (288 emplacements).
 
 ## Installation et démarrage
 

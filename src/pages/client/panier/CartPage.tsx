@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import { alertApiError } from '../../../utils/apiError';
 import EmptyState from '../../../components/shared/EmptyState';
 import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
@@ -248,7 +248,7 @@ export default function CartPage() {
             {/* Step 1: Panier (Completed) */}
             <div className="flex flex-col items-center gap-sm text-primary-container">
               <div className="w-9 h-9 rounded-full border-2 border-primary-container bg-white text-primary-container flex items-center justify-center font-bold text-h3 transition-all duration-300">
-                <MIcon name="check" style={{ fontSize: 20 }} />
+                <FaIcon name="check" style={{ fontSize: 20 }} />
               </div>
               <span className="font-label text-label font-medium text-primary-container">{tx("Panier")}</span>
             </div>
@@ -285,14 +285,14 @@ export default function CartPage() {
             {/* Articles Section */}
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg border-b border-border-default pb-md">
-                <MIcon name="shopping_cart" className="text-primary-container" />
+                <FaIcon name="shopping_cart" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">Votre panier ({count} articles)</h2>
               </div>
 
               {/* Article List */}
               {items.length === 0 ? (
                 <EmptyState
-                  icon={<MIcon name="shopping_cart" className="text-4xl text-primary" />}
+                  icon={<FaIcon name="shopping_cart" className="text-4xl text-primary" />}
                   title={tx("Votre panier est vide")}
                   description={tx("Ajoutez des produits frais du marché pour commencer vos achats.")}
                   action={
@@ -326,7 +326,7 @@ export default function CartPage() {
                               className="w-full h-full object-cover rounded-lg"
                             />
                           ) : (
-                            <MIcon name="psychiatry" className="text-primary-container text-[32px]" />
+                            <FaIcon name="psychiatry" className="text-primary-container text-[32px]" />
                           )}
                         </div>
 
@@ -385,7 +385,7 @@ export default function CartPage() {
                             className="text-error hover:bg-error-light p-2 rounded-full transition-colors opacity-80 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
                             title={tx("Supprimer")}
                           >
-                            <MIcon name="delete" className="text-[20px]" />
+                            <FaIcon name="delete" className="text-[20px]" />
                           </button>
                         </div>
                       </div>
@@ -398,7 +398,7 @@ export default function CartPage() {
             {/* Point de Repère Section — zones + points de repère réels (GET /api/zones) */}
             <div className="bg-white rounded-lg p-lg shadow-sm border border-border-default/50">
               <div className="flex items-center gap-sm mb-lg">
-                <MIcon name="location_on" className="text-primary-container" />
+                <FaIcon name="location_on" className="text-primary-container" />
                 <h2 className="font-h2 text-h2 text-on-surface">{tx("Lieu de livraison")}</h2>
               </div>
               <div className="space-y-md">
@@ -408,7 +408,7 @@ export default function CartPage() {
                       {tx("Zone de livraison")}
                     </label>
                     <div className="relative">
-                      <MIcon name="map" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                      <FaIcon name="map" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                       <select
                         className="w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 border-border-default appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60"
                         value={zoneId ?? ''}
@@ -416,13 +416,16 @@ export default function CartPage() {
                         disabled={zonesLoading}
                       >
                         {zonesLoading && <option value="">{tx("Chargement des zones…")}</option>}
+                        {!zonesLoading && zones.length === 0 && (
+                          <option value="">{tx("Aucune zone disponible")}</option>
+                        )}
                         {zones.map((z) => (
                           <option key={z.id} value={z.id}>
                             {z.nom}
                           </option>
                         ))}
                       </select>
-                      <MIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                      <FaIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                     </div>
                   </div>
 
@@ -431,7 +434,7 @@ export default function CartPage() {
                       {tx("Point de repère")} <span className="text-error">*</span>
                     </label>
                     <div className="relative">
-                      <MIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                      <FaIcon name="edit_location" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                       <select
                         className={`w-full pl-10 pr-10 py-3 bg-white rounded-lg border-1.5 appearance-none focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body disabled:opacity-60 ${
                           landmarkError ? 'border-error' : 'border-border-default'
@@ -501,7 +504,7 @@ export default function CartPage() {
                           </optgroup>
                         )}
                       </select>
-                      <MIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                      <FaIcon name="expand_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                     </div>
                     {landmarkError && (
                       <p className="mt-1 text-xs font-semibold text-error">
@@ -516,7 +519,7 @@ export default function CartPage() {
                     Description du lieu exact (optionnel)
                   </label>
                   <div className="relative">
-                    <MIcon name="edit" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                    <FaIcon name="edit" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
                       className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border-1.5 border-border-default focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all text-body"
                       type="text"
@@ -581,12 +584,12 @@ export default function CartPage() {
                   disabled={items.length === 0 || loading}
                   className="w-full py-4 bg-primary-container hover:bg-primary-hover text-white rounded-lg font-h3 flex items-center justify-center gap-sm transition-all transform active:scale-95 shadow-md shadow-primary-container/20 cursor-pointer disabled:opacity-50"
                 >
-                  <MIcon name="credit_card" />
+                  <FaIcon name="credit_card" />
                   {loading ? 'Traitement de la commande...' : tx("Payer avec FedaPay")}
                 </button>
 
                 <div className="flex items-center justify-center gap-xs py-sm px-md bg-success-light text-success-dark rounded-full border border-success-light">
-                  <MIcon name="verified_user" className="text-[18px]" />
+                  <FaIcon name="verified_user" className="text-[18px]" />
                   <span className="text-micro font-bold">{tx("Paiement sécurisé FedaPay")}</span>
                 </div>
 
@@ -601,7 +604,7 @@ export default function CartPage() {
 
               <div className="mt-lg p-md bg-bg-app rounded-lg">
                 <div className="flex gap-sm">
-                  <MIcon name="info" className="text-info shrink-0" />
+                  <FaIcon name="info" className="text-info shrink-0" />
                   <p className="text-secondary text-text-secondary">
                     {tx("Livraison par nos coursiers partenaires TOKPa Express — le livreur se présente au point de repère choisi.")}
                   </p>

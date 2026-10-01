@@ -1,3 +1,4 @@
+import type { FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -101,13 +102,35 @@ import {
   faListCheck,
   faMagnifyingGlassMinus,
   faMagnifyingGlassPlus,
-  faPaperclip as faPaperclipIcon,
+  faPaperclip,
   faLink,
   faCommentDots,
   faFaceSmile,
-  faMessage as faMessageIcon,
   faHourglassHalf,
   faTriangleExclamation,
+  faAppleWhole,
+  faBan,
+  faBellSlash,
+  faBowlFood,
+  faBreadSlice,
+  faBurger,
+  faCashRegister,
+  faGlassWater,
+  faHammer,
+  faIceCream,
+  faKitchenSet,
+  faLeaf,
+  faMartiniGlass,
+  faMugHot,
+  faMugSaucer,
+  faSackDollar,
+  faSeedling,
+  faUsers,
+  faWheatAwn,
+  faBriefcase,
+  faCircleUser,
+  faEyeSlash,
+  faChevronDown
 } from '@fortawesome/free-solid-svg-icons';
 
 /**
@@ -128,7 +151,7 @@ const icons: Record<string, IconDefinition> = {
   arrow_back: faArrowLeft,
   arrow_forward: faArrowRight,
   arrow_upward: faArrowUp,
-  attach_file: faPaperclipIcon,
+  attach_file: faPaperclip,
   auto_delete: faRotate,
   badge: faIdBadge,
   block: faCircleXmark,
@@ -177,7 +200,7 @@ const icons: Record<string, IconDefinition> = {
   restaurant: faUtensils,
   event_available: faCalendarCheck,
   event_busy: faCalendarDays,
-  expand_more: faChevronRight,
+  expand_more: faChevronDown,
   face_nod: faCircleCheck,
   fiber_manual_record: faCircleDot,
   file_download: faFileArrowDown,
@@ -266,7 +289,7 @@ const icons: Record<string, IconDefinition> = {
   shopping_basket: faBasketShopping,
   shopping_cart: faCartShopping,
   smart_toy: faWandMagicSparkles,
-  sms: faMessageIcon,
+  sms: faMessage,
   speed: faGaugeHigh,
   star: faStar,
   ssid_chart: faNetworkWired,
@@ -303,17 +326,63 @@ const icons: Record<string, IconDefinition> = {
   list: faList,
   list_check: faListCheck,
   play: faPlay,
+  account_circle: faCircleUser,
+  group: faUsers,
+  visibility_off: faEyeSlash,
+  work: faBriefcase,
+  alarm_off: faBellSlash,
+  bakery_dining: faBreadSlice,
+  broken_image: faImage,
+  coffee: faMugHot,
+  daily_essentials: faBasketShopping,
+  delivery_dining: faTruckFast,
+  eco: faLeaf,
+  emoji_food_beverage: faMugSaucer,
+  festival: faStore,
+  freshness: faAppleWhole,
+  grain: faWheatAwn,
+  hardware: faHammer,
+  icecream: faIceCream,
+  kitchen: faKitchenSet,
+  liquor: faMartiniGlass,
+  local_dining: faUtensils,
+  local_drink: faGlassWater,
+  local_florist: faSeedling,
+  local_grocery_store: faBasketShopping,
+  local_offer: faTag,
+  lunch_dining: faBurger,
+  market: faStore,
+  no_meals: faBan,
+  point_of_sale: faCashRegister,
+  potted_plant: faSeedling,
+  price_change: faSackDollar,
+  production_quantity_limits: faBoxOpen,
+  ramen_dining: faBowlFood,
+  sell: faTag,
+  set_meal: faUtensils,
+  supervisor_account: faUsers,
+  yard: faSeedling,
 };
 
 // A neutral icon is used when a legacy name has no direct Font Awesome match.
 export default function FaIcon({
   name,
   className,
+  style,
   title,
 }: {
   name: string;
   className?: string;
+  style?: FontAwesomeIconProps['style'];
   title?: string;
 }) {
-  return <FontAwesomeIcon icon={icons[name] ?? faCircleQuestion} className={className} title={title} aria-hidden={title ? undefined : true} />;
+  return (
+    <FontAwesomeIcon
+      icon={icons[name] ?? faCircleQuestion}
+      className={className}
+      style={style}
+      title={title}
+      aria-hidden={title ? undefined : true}
+    />
+  );
 }

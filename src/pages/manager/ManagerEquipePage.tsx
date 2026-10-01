@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -54,7 +54,7 @@ export default function ManagerEquipePage() {
             </div>
           </div>
           <button type="button" className="btn btn-primary gap-2" onClick={() => setAjout(true)}>
-            <MIcon name="person_add" className="text-[18px]" />
+            <FaIcon name="person_add" className="text-[18px]" />
             {tx("Ajouter un livreur")}
           </button>
         </div>
@@ -150,7 +150,7 @@ export default function ManagerEquipePage() {
             <div className="flex items-center justify-between border-b border-border-default p-4">
               <h3 className="text-h3 font-h3 font-bold">{tx("Nouveau Livreur")}</h3>
               <button type="button" onClick={() => setAjout(false)} className="p-1 text-text-secondary hover:text-on-surface">
-                <MIcon name="close" className="text-[20px]" />
+                <FaIcon name="close" className="text-[20px]" />
               </button>
             </div>
             <div className="flex-1 p-4 text-label">

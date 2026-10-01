@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
@@ -46,7 +46,7 @@ export default function ProfileStats() {
           className="flex items-center gap-md rounded-[14px] border border-line bg-white p-4 shadow-sm transition-transform hover:border-primary-light active:scale-98"
         >
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.iconBg}`}>
-            <MIcon name={s.icon} className="text-[24px]" />
+            <FaIcon name={s.icon} className="text-[24px]" />
           </div>
           <div>
             <p className="text-micro uppercase tracking-wider text-ink-3">{s.label}</p>

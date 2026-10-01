@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import ManagerLayout from '../../components/layout/manager/ManagerLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { managerApi } from '../../services/api';
 import { unwrap, listOf, fmtFcfa, heureCourte } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -101,7 +101,7 @@ export default function ManagerDashboardPage() {
           {kpis.map((k) => (
             <div key={k.label} className="rounded-lg border border-border-default bg-white p-lg shadow-sm">
               <div className="flex items-center gap-2">
-                <MIcon name={k.icon} className="text-primary text-[20px]" />
+                <FaIcon name={k.icon} className="text-primary text-[20px]" />
                 <p className="text-label text-text-secondary">{k.label}</p>
               </div>
               <p className="mt-2 text-h1 font-h1 font-bold">

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import clsx from 'clsx';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { useAppSelector } from '../../../hooks/useStore';
 import { selectCount } from '../../../store/slices/cart/cartSlice';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -94,7 +94,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
         {/* Recherche (pillule) */}
         <form onSubmit={submitSearch} className="mx-8 hidden max-w-1xl flex-1 lg:block">
           <div className="relative flex items-center rounded-full border border-line bg-warm-low px-4 py-1.5">
-            <MIcon name="search" className="mr-2 text-ink-3" />
+            <FaIcon name="search" className="mr-2 text-ink-3" />
             <input
               type="text"
               value={search ?? localSearch}
@@ -114,7 +114,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             title={language === 'fr' ? 'Switch to English' : tx("Passer en Français")}
             className="flex items-center gap-1 rounded-full border border-primary-light bg-primary-lighter px-2.5 py-1 text-xs font-bold text-primary-shade transition-transform active:scale-95"
           >
-            <MIcon name="language" className="text-[16px]" />
+            <FaIcon name="language" className="text-[16px]" />
             <span className="uppercase">{language}</span>
           </button>
 
@@ -123,15 +123,15 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             className="scale-interaction relative md:hidden"
             title={t('nav.negotiations')}
           >
-            <MIcon name="handshake" />
+            <FaIcon name="handshake" />
             {activeNegoCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
 
           <Link to="/notifications" className="scale-interaction" aria-label="Notifications">
-            <MIcon name="notifications" />
+            <FaIcon name="notifications" />
           </Link>
           <Link to="/panier" className="scale-interaction relative" aria-label={tx("Panier")}>
-            <MIcon name="shopping_cart" />
+            <FaIcon name="shopping_cart" />
             {cartCount > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />}
           </Link>
           {/* Bascule vers l'espace de travail (admin / manager) — invisible pour un client */}
@@ -139,7 +139,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             const space = staffSpace(currentRole());
             return space ? (
               <Link to={space.to} className="scale-interaction" aria-label={space.label} title={space.label}>
-                <MIcon name={space.icon} />
+                <FaIcon name={space.icon} />
               </Link>
             ) : null;
           })()}
@@ -149,7 +149,7 @@ export default function ClientNavbar({ search, onSearch, searchPlaceholder }: Cl
             aria-label={hasSession() ? tx("Profil") : tx("Se connecter")}
             title={hasSession() ? tx("Profil") : tx("Se connecter")}
           >
-            <MIcon name={hasSession() ? "account_circle" : "login"} />
+            <FaIcon name={hasSession() ? "account_circle" : "login"} />
           </Link>
         </div>
       </div>

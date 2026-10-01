@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
 import DarkFooter from '../../../components/layout/client/DarkFooter';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
@@ -232,7 +232,7 @@ export default function HomePage() {
               className="scale-interaction flex items-center gap-2 rounded-[10px] bg-primary px-4 py-3 sm:px-lg sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-primary-hover cursor-pointer"
             >
               {t('home.heroCta')}
-              <MIcon name="arrow_forward" />
+              <FaIcon name="arrow_forward" />
             </button>
           </div>
         </section>
@@ -242,7 +242,7 @@ export default function HomePage() {
           {atoutsList.map((a) => (
             <div key={a.titre} className="flex items-start gap-md rounded-[14px] border border-line bg-card p-4 sm:p-lg">
               <div className="rounded-xl bg-primary-lighter p-2 sm:p-sm">
-                <MIcon name={a.icon} className="text-[24px] sm:text-[32px] text-primary-shade" />
+                <FaIcon name={a.icon} className="text-[24px] sm:text-[32px] text-primary-shade" />
               </div>
               <div>
                 <h3 className="font-h3 text-sm sm:text-base font-bold text-on-surface">{a.titre}</h3>
@@ -258,7 +258,7 @@ export default function HomePage() {
           <div className="mb-md sm:mb-lg flex items-end justify-between">
             <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.exploreCategories')}</h2>
             <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
-              {t('common.seeAll')} <MIcon name="chevron_right" className="text-[18px]" />
+              {t('common.seeAll')} <FaIcon name="chevron_right" className="text-[18px]" />
             </Link>
           </div>
           {catsError ? (
@@ -278,7 +278,7 @@ export default function HomePage() {
                 onClick={() => navigate({ to: '/catalogue', search: { cat: c.cat } })}
                 className="bento-hover group flex cursor-pointer flex-col items-center gap-sm rounded-[14px] border border-transparent bg-warm-low p-4 sm:p-lg hover:border-primary-light"
               >
-                <MIcon name={c.icon} className="text-[36px] sm:text-[48px] text-primary-shade transition-transform group-hover:scale-110" />
+                <FaIcon name={c.icon} className="text-[36px] sm:text-[48px] text-primary-shade transition-transform group-hover:scale-110" />
                 <span className="font-h3 text-xs sm:text-base text-on-surface">{c.nom}</span>
               </div>
             ))}
@@ -293,7 +293,7 @@ export default function HomePage() {
             <div className="mb-md sm:mb-lg flex items-end justify-between">
               <h2 className="font-h1 text-lg sm:text-h1 text-on-surface">{t('home.selectionTitle')}</h2>
               <Link to="/catalogue" className="flex items-center gap-1 text-xs sm:text-sm font-bold text-primary-shade hover:underline">
-                {t('common.seeAll')} <MIcon name="chevron_right" className="text-[18px]" />
+                {t('common.seeAll')} <FaIcon name="chevron_right" className="text-[18px]" />
               </Link>
             </div>
 
@@ -304,7 +304,7 @@ export default function HomePage() {
               />
             ) : needsLogin ? (
               <EmptyState
-                icon={<MIcon name="lock" className="text-4xl text-primary" />}
+                icon={<FaIcon name="lock" className="text-4xl text-primary" />}
                 title={isFr ? 'Connectez-vous pour voir les produits du jour' : 'Log in to see today’s products'}
                 description={
                   isFr
@@ -336,7 +336,7 @@ export default function HomePage() {
                   <div className="relative mb-md h-48 sm:h-40 overflow-hidden rounded-[10px] bg-page flex items-center justify-center">
                     {!item.image ? (
                       <div className="w-full h-full bg-gradient-to-br from-primary-lighter to-primary-light flex items-center justify-center">
-                        <MIcon name="shopping_bag" className="text-4xl text-primary" />
+                        <FaIcon name="shopping_bag" className="text-4xl text-primary" />
                       </div>
                     ) : (
                       <img
@@ -363,7 +363,7 @@ export default function HomePage() {
                         }}
                         className="scale-interaction flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white cursor-pointer"
                       >
-                        <MIcon name="add" className="text-[18px]" />
+                        <FaIcon name="add" className="text-[18px]" />
                       </button>
                     </div>
                   </div>

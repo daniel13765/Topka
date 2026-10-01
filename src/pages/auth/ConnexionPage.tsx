@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import LangToggle from '../../components/shared/LangToggle';
 import { authApi } from '../../services/api';
 import { extractApiError, formatApiError } from '../../utils/apiError';
@@ -68,19 +68,19 @@ export default function ConnexionPage() {
           </div>
           <div className="relative z-10 flex flex-col items-center my-auto">
             <div className="w-full max-w-[280px] p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl mb-6 flex justify-center">
-              <MIcon name="storefront" className="text-white text-[96px]" />
+              <FaIcon name="storefront" className="text-white text-[96px]" />
             </div>
             <div className="space-y-md w-full max-w-[280px]">
               <div className="flex items-center gap-sm text-white">
-                <MIcon name="local_shipping" className="text-[20px]" />
+                <FaIcon name="local_shipping" className="text-[20px]" />
                 <span className="font-body text-body font-medium">{tx("Livraison rapide")}</span>
               </div>
               <div className="flex items-center gap-sm text-white">
-                <MIcon name="handshake" className="text-[20px]" />
+                <FaIcon name="handshake" className="text-[20px]" />
                 <span className="font-body text-body font-medium">{tx("Prix négociables")}</span>
               </div>
               <div className="flex items-center gap-sm text-white">
-                <MIcon name="location_on" className="text-[20px]" />
+                <FaIcon name="location_on" className="text-[20px]" />
                 <span className="font-body text-body font-medium">{tx("Suivi en temps réel")}</span>
               </div>
             </div>
@@ -116,7 +116,7 @@ export default function ConnexionPage() {
                   {tx("Adresse email")}
                 </label>
                 <div className="relative">
-                  <MIcon name="mail" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
+                  <FaIcon name="mail" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
                   <input
                     className={`w-full pl-[44px] pr-md py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
                       authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
@@ -159,7 +159,7 @@ export default function ConnexionPage() {
                   </button>
                 </div>
                 <div className="relative">
-                  <MIcon name="lock" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
+                  <FaIcon name="lock" className="absolute left-md top-1/2 -translate-y-1/2 text-text-secondary text-[20px]" />
                   <input
                     className={`w-full pl-[44px] pr-[44px] py-sm border-[1.5px] rounded-[10px] bg-white text-text-main font-body text-body outline-none transition-all ${
                       authError ? 'border-error' : 'border-border-default focus:border-[#F97316]'
@@ -177,7 +177,7 @@ export default function ConnexionPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-md top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-main cursor-pointer"
                   >
-                    <MIcon name={showPassword ? 'visibility_off' : 'visibility'} className="text-[20px]" />
+                    <FaIcon name={showPassword ? 'visibility_off' : 'visibility'} className="text-[20px]" />
                   </button>
                 </div>
               </div>
@@ -209,7 +209,7 @@ export default function ConnexionPage() {
                 {/* Error Message */}
                 {authError && (
                   <div className="flex items-center gap-sm bg-[#FEF2F2] p-sm rounded-[10px] border border-error/20">
-                    <MIcon name="error" className="text-[#991B1B] text-[20px]" />
+                    <FaIcon name="error" className="text-[#991B1B] text-[20px]" />
                     <span className="text-[#991B1B] font-secondary text-[13px]">
                       {authError}
                     </span>
@@ -233,7 +233,7 @@ export default function ConnexionPage() {
                 onClick={() => navigate({ to: '/verification-2fa' })}
                 className="w-full flex items-center justify-center gap-sm bg-[#FFF7ED] hover:bg-primary-tint border border-primary-light text-[#C2410C] font-medium py-sm rounded-[10px] transition-all active:scale-[97%] cursor-pointer"
               >
-                <MIcon name="verified_user" className="text-[20px]" />
+                <FaIcon name="verified_user" className="text-[20px]" />
                 {tx("Vérification en 2 étapes (2FA)")}
               </button>
             </form>
@@ -247,7 +247,7 @@ export default function ConnexionPage() {
 
             {/* Footer Info */}
             <footer className="mt-xl flex items-center justify-center gap-xs text-[#9CA3AF] text-[12px] font-secondary">
-              <MIcon name="lock" className="text-[16px]" />
+              <FaIcon name="lock" className="text-[16px]" />
               {tx("Paiement sécurisé via FedaPay")}
             </footer>
           </div>

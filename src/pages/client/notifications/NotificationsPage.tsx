@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
 import ClientFooter from '../../../components/layout/client/ClientFooter';
 import ClientBottomNav from '../../../components/layout/client/ClientBottomNav';
-import MIcon from '../../../components/shared/MIcon';
+import FaIcon from '../../../components/shared/FaIcon';
 import Pagination from '../../../components/shared/Pagination';
 import EmptyState from '../../../components/shared/EmptyState';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
@@ -96,7 +96,7 @@ export default function NotificationsPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="bg-bg-app min-h-screen flex items-center justify-center font-body text-text-main">
-        <MIcon name="sync" className="text-primary text-4xl animate-spin" />
+        <FaIcon name="sync" className="text-primary text-4xl animate-spin" />
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                     : 'text-text-secondary hover:bg-bg-secondary hover:text-text-main',
                 )}
               >
-                <MIcon name={icon} className="text-lg" />
+                <FaIcon name={icon} className="text-lg" />
                 <span>{tx(label)}</span>
               </button>
             ))}
@@ -161,7 +161,7 @@ export default function NotificationsPage() {
 
           <div className="mt-auto p-4 bg-primary-tint rounded-xl border border-primary-light">
             <div className="flex items-center gap-2 mb-2">
-              <MIcon name="lightbulb" className="text-primary" />
+              <FaIcon name="lightbulb" className="text-primary" />
               <span className="text-xs font-bold text-primary-dark">{tx("Astuce TOKPa")}</span>
             </div>
             <p className="text-xs text-primary-deep leading-relaxed">
@@ -191,7 +191,7 @@ export default function NotificationsPage() {
                 disabled={unreadCount === 0}
                 className="px-4 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary-tint transition-all flex items-center gap-2 text-sm font-semibold cursor-pointer disabled:opacity-50"
               >
-                <MIcon name="done_all" />
+                <FaIcon name="done_all" />
                 {tx("Tout marquer comme lu")}
               </button>
             </div>
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
                       : 'bg-white text-text-secondary border border-border-default',
                   )}
                 >
-                  <MIcon name={icon} className="text-sm" />
+                  <FaIcon name={icon} className="text-sm" />
                   <span>{tx(label)}</span>
                 </button>
               ))}
@@ -228,7 +228,7 @@ export default function NotificationsPage() {
             ) : filtered.length === 0 && hasLoaded ? (
               <div className="bg-white border border-border-default rounded-xl">
                 <EmptyState
-                  icon={<MIcon name="notifications" className="text-4xl text-primary" />}
+                  icon={<FaIcon name="notifications" className="text-4xl text-primary" />}
                   title={filter === 'all' ? tx("Aucune notification") : 'Aucune notification de ce type'}
                   description={tx("Vos alertes (commandes, négociations, paiements) apparaîtront ici.")}
                 />
@@ -265,7 +265,7 @@ export default function NotificationsPage() {
                       )}
                     >
                       <div className={clsx('w-10 h-10 shrink-0 rounded-full flex items-center justify-center border', iconBg)}>
-                        <MIcon name={typeIcon} className="text-xl" />
+                        <FaIcon name={typeIcon} className="text-xl" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
