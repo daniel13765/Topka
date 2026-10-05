@@ -379,7 +379,7 @@ export default function HomePage() {
         <section className="mb-lg sm:mb-xl bg-white rounded-[14px] border-l-[3px] border-secondary-container p-4 sm:p-lg flex flex-col md:flex-row items-center justify-between gap-md sm:gap-lg">
           <div className="w-full md:w-[70%]">
             <div className="inline-flex max-w-full items-center gap-2 bg-secondary-container/10 text-on-secondary-container px-2.5 py-1 rounded-full mb-sm text-xs sm:text-label font-medium uppercase tracking-wider overflow-hidden">
-              <span className="material-symbols-outlined text-[16px] sm:text-[18px] shrink-0">handshake</span>
+              <FaIcon name="handshake" className="text-[16px] sm:text-[18px] shrink-0" />
               <span className="truncate sm:whitespace-normal">{t('home.negoBadge')}</span>
             </div>
             <h2 className="font-h1 text-lg sm:text-h1 text-on-surface mb-xs">{t('home.negoTitle')}</h2>

@@ -9,11 +9,10 @@ import type { AppNotification } from '../../../types/models';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
 
-
 interface AdminNotificationBellProps {
   /** Classes du bouton : chaque barre garde le style de sa maquette. */
   className: string;
-  /** Icône de la cloche (MIcon ou icône Tabler selon la maquette). */
+  /** Icône de la cloche, fournie par l'appelant (composant `FaIcon` dans l'admin). */
   icon: ReactNode;
   /** Classes de la pastille « non lues » (affichée seulement s'il y en a). */
   dotClassName?: string;

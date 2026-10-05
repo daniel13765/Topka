@@ -7,17 +7,13 @@ import { alertApiError } from '../../utils/apiError';
 import { statutLivreur } from '../../utils/riderStatus';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
-
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
         .sidebar-item-active { background-color: #fea619 !important; color: #684000 !important; font-weight: 700; border-radius: 0.5rem; }
     `;
 
@@ -247,7 +243,7 @@ export default function AdminLivreursPage() {
                           openDetails(l, true);
                         }}
                       >
-                        <MIcon name="edit" className="text-[20px]" />
+                        <FaIcon name="edit" className="text-[20px]" />
                       </button>
                       <button
                         type="button"
@@ -258,7 +254,7 @@ export default function AdminLivreursPage() {
                           void desactiver(l);
                         }}
                       >
-                        <MIcon name="delete" className="text-[20px]" />
+                        <FaIcon name="delete" className="text-[20px]" />
                       </button>
                     </td>
                   </tr>
@@ -275,7 +271,7 @@ export default function AdminLivreursPage() {
           </span>
           <div className="flex gap-2">
             <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors disabled:opacity-40" disabled={current <= 1} onClick={() => setPage(current - 1)}>
-              <MIcon name="chevron_left" className="text-[18px] align-middle" />
+              <FaIcon name="chevron_left" className="text-[18px] align-middle" />
             </button>
             {Array.from({ length: pages }, (_, i) => i + 1)
               .filter((n) => Math.abs(n - current) <= 1 || n === 1 || n === pages)
@@ -294,7 +290,7 @@ export default function AdminLivreursPage() {
                 </button>
               ))}
             <button type="button" className="px-3 py-1 border border-border-default rounded hover:bg-white transition-colors disabled:opacity-40" disabled={current >= pages} onClick={() => setPage(current + 1)}>
-              <MIcon name="chevron_right" className="text-[18px] align-middle" />
+              <FaIcon name="chevron_right" className="text-[18px] align-middle" />
             </button>
           </div>
         </div>
@@ -312,7 +308,7 @@ export default function AdminLivreursPage() {
                 setEditing(false);
               }}
             >
-              <MIcon name="close" />
+              <FaIcon name="close" />
             </button>
           </div>
           <div className="flex flex-col items-center mb-xl">
@@ -341,21 +337,21 @@ export default function AdminLivreursPage() {
             </div>
             <div className="space-y-md">
               <div className="flex items-start gap-3">
-                <MIcon name="call" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <FaIcon name="call" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
                   <p className="text-text-secondary text-micro">{tx("Téléphone")}</p>
                   <p className="font-body font-medium">{selected.telephone ?? '—'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <MIcon name="motorcycle" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <FaIcon name="motorcycle" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
                   <p className="text-text-secondary text-micro">{tx("Véhicule")}</p>
                   <p className="font-body font-medium">Bajaj Pulsar (BJ-9921)</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <MIcon name="location_on" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <FaIcon name="location_on" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
                   <p className="text-text-secondary text-micro">{tx("Zone Actuelle")}</p>
                   <p className="font-body font-medium" id="detailZone">

@@ -28,7 +28,6 @@
     "jspdf": "^4.2.1",
     "laravel-echo": "^2.5.0",
     "leaflet": "^1.9.4",
-    "material-symbols": "^0.47.3",
     "pusher-js": "^8.6.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

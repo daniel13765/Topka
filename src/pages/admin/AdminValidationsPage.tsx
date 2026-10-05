@@ -5,17 +5,13 @@ import { fmtFcfa, dateCourte, listOf, unwrap } from '../../services/api/unwrap';
 import { alertApiError } from '../../utils/apiError';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import { useLanguage } from '../../context/LanguageContext';
 import { tx } from '../../i18n/tx';
-
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const DESIGN_CSS = `
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
         .sidebar-active {
             background-color: #1F2937;
             color: #FFFFFF;
@@ -259,7 +255,7 @@ export default function AdminValidationsPage() {
                 onClick={() => setPage(current - 1)}
                 className="p-1.5 rounded bg-white border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
               >
-                <MIcon name="chevron_left" className="text-[18px]" />
+                <FaIcon name="chevron_left" className="text-[18px]" />
               </button>
               <button
                 type="button"
@@ -267,7 +263,7 @@ export default function AdminValidationsPage() {
                 onClick={() => setPage(current + 1)}
                 className="p-1.5 rounded bg-white border border-gray-200 hover:bg-gray-100 transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
               >
-                <MIcon name="chevron_right" className="text-[18px]" />
+                <FaIcon name="chevron_right" className="text-[18px]" />
               </button>
             </div>
           </div>
@@ -277,7 +273,7 @@ export default function AdminValidationsPage() {
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 flex flex-col gap-4">
               <h2 className="text-lg font-bold text-text-main">{tx("Détail de la proposition")}</h2>
               <div className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 flex items-center justify-center">
-                {selImage ? <img className="h-full w-full object-cover" src={selImage} alt={selected.product?.nom ?? 'Produit'} /> : <MIcon name="image" className="text-4xl text-gray-300" />}
+                {selImage ? <img className="h-full w-full object-cover" src={selImage} alt={selected.product?.nom ?? 'Produit'} /> : <FaIcon name="image" className="text-4xl text-gray-300" />}
               </div>
               <div>
                 <h3 className="text-base font-bold">{selected.product?.nom ?? '—'}</h3>
@@ -342,11 +338,11 @@ export default function AdminValidationsPage() {
                 onClick={() => decider(selected, 'accepte')}
                 className="w-full py-3 bg-success hover:bg-success-dark text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-success/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <MIcon name="check_circle" className="text-[18px]" />
+                <FaIcon name="check_circle" className="text-[18px]" />
                 Accepter ce prix
               </button>
               <button className="w-full py-3 bg-white border-2 border-primary text-primary hover:bg-primary-tint rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
-                <MIcon name="edit" className="text-[18px]" />
+                <FaIcon name="edit" className="text-[18px]" />
                 Contre-proposer
               </button>
               <button
@@ -355,7 +351,7 @@ export default function AdminValidationsPage() {
                 onClick={() => refuserEtNotifier(selected)}
                 className="w-full py-3 bg-error-light text-error-dark border border-error-dark/20 hover:bg-error-dark hover:text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <MIcon name="cancel" className="text-[18px]" />
+                <FaIcon name="cancel" className="text-[18px]" />
                 Refuser et notifier
               </button>
             </div>

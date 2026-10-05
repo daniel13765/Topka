@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import { Provider } from 'react-redux';
 import '@fontsource-variable/inter';
-import 'material-symbols/outlined.css';
 import './theme/theme.css';
 import { store } from './store';
 import { router } from './routes/router';

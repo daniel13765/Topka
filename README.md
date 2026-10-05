@@ -22,14 +22,15 @@ Cette version conserve la direction visuelle TOKPa tout en intégrant l’archit
 
 TOKPa rend ses icônes par `src/components/shared/FaIcon.tsx`, qui traduit un nom de ligature
 (celles de la maquette d’origine, ex. `shopping_cart`) vers une icône Font Awesome du jeu gratuit.
-La table couvre les noms utilisés par le code et ceux que le backend peut envoyer dans le champ
-`icone` d’une catégorie ; un nom inconnu retombe sur `faCircleQuestion`, donc
-`tests/fa-icones-couvertes.test.ts` échoue dès qu’un écran client ou manager appelle un nom absent
-de la table, ou réintroduit une ligature Material Symbols.
+La table vit dans `src/components/shared/faIcones.ts` — un module de constantes, séparé du
+composant pour que le composant reste le seul export du fichier (Fast Refresh) et pour que la table
+ait une source unique : elle est lue aussi par `markupIcone`, la fonction qui fabrique le `<svg>` en
+chaîne de caractères dont les scripts du design (`src/pages/admin/_scripts`) ont besoin pour peindre
+leurs boutons. Aucun écran n’embarque la police Material Symbols : elle pesait 3 981 208 octets.
 
-Exception assumée : l’espace **administration** (`src/pages/admin`, `src/components/layout/admin`)
-utilise encore `MIcon` et la police Material Symbols, parce que ses écrans sont la copie conforme
-du dépôt de référence ; la bascule est un lot distinct (288 emplacements).
+`tests/fa-icones-couvertes.test.ts` échoue dès qu’un écran d’un des quatre espaces appelle un nom
+absent de la table, dès qu’une ligature `material-symbols` réapparaît quelque part dans `src`, et
+dès que le script embarqué d’un écran maquette cesse d’être du JavaScript valide.
 
 ## Installation et démarrage
 

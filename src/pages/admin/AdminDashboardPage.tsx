@@ -5,11 +5,10 @@ import { adminApi } from '../../services/api';
 import { useLiveRows } from '../../services/api/useLiveRows';
 import { unwrap, fmtFcfa, listOf } from '../../services/api/unwrap';
 import { extractApiError, formatApiError } from '../../utils/apiError';
-import MIcon from '../../components/shared/MIcon';
+import FaIcon from '../../components/shared/FaIcon';
 import type { DashboardRow, OrderRow, ProductRow, ZoneRow } from '../../types/adminRows';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
-
 
 /** Activité récente — données statiques du design Stitch (copie conforme). */
 interface Activity {
@@ -32,7 +31,6 @@ interface Activity {
   audit: string;
   cta: string;
 }
-
 
 /** Couleurs du thème pour l'anneau « Ventes par Zone » (3 premières zones + « Autres »). */
 const ZONE_COLORS = [
@@ -223,12 +221,12 @@ export default function AdminDashboardPage() {
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
               Volume d'affaires (GMV)
             </span>
-            <span className="p-2 bg-primary-light text-primary rounded-lg material-symbols-outlined">payments</span>
+            <FaIcon name="payments" className="p-2 bg-primary-light text-primary rounded-lg" />
           </div>
           <div className="space-y-xs">
             <h2 className="font-h1 text-h1 text-on-surface">{dash?.ca != null ? fmtFcfa(dash.ca) : '—'}</h2>
             <div className="flex items-center gap-1 text-text-secondary">
-              <MIcon name="payments" className="text-sm" />
+              <FaIcon name="payments" className="text-sm" />
               <span className="font-secondary text-label font-bold">{tx("Paiements réussis")}</span>
             </div>
           </div>
@@ -239,14 +237,12 @@ export default function AdminDashboardPage() {
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
               {tx("Commandes totales")}
             </span>
-            <span className="p-2 bg-secondary-container/20 text-secondary rounded-lg material-symbols-outlined">
-              shopping_cart
-            </span>
+            <FaIcon name="shopping_cart" className="p-2 bg-secondary-container/20 text-secondary rounded-lg" />
           </div>
           <div className="space-y-xs">
             <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.commandes ?? '—')}</h2>
             <div className="flex items-center gap-1 text-text-secondary">
-              <MIcon name="schedule" className="text-sm" />
+              <FaIcon name="schedule" className="text-sm" />
               <span className="font-secondary text-label font-bold">{dash ? `${Number(parStatut.en_attente ?? 0)} en attente` : '—'}</span>
             </div>
           </div>
@@ -257,9 +253,7 @@ export default function AdminDashboardPage() {
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
               {tx("Utilisateurs actifs")}
             </span>
-            <span className="p-2 bg-tertiary-container/20 text-tertiary rounded-lg material-symbols-outlined">
-              person_add
-            </span>
+            <FaIcon name="person_add" className="p-2 bg-tertiary-container/20 text-tertiary rounded-lg" />
           </div>
           <div className="space-y-xs">
             <h2 className="font-h1 text-h1 text-on-surface">{String(dash?.utilisateurs_actifs ?? '—')}</h2>
@@ -276,14 +270,12 @@ export default function AdminDashboardPage() {
             <span className="font-secondary text-label text-text-secondary uppercase tracking-wider">
               Taux de livraison
             </span>
-            <span className="p-2 bg-success-light text-success rounded-lg material-symbols-outlined">
-              local_shipping
-            </span>
+            <FaIcon name="local_shipping" className="p-2 bg-success-light text-success rounded-lg" />
           </div>
           <div className="space-y-xs">
             <h2 className="font-h1 text-h1 text-on-surface">{tauxLivraison}</h2>
             <div className="flex items-center gap-1 text-success">
-              <MIcon name="check_circle" className="text-sm" />
+              <FaIcon name="check_circle" className="text-sm" />
               <span className="font-secondary text-label font-bold">{dash ? tr(`${nbLivrees} livrées sur ${Math.max(0, nbNonAnnulees)}`, `${nbLivrees} delivered out of ${Math.max(0, nbNonAnnulees)}`) : '—'}</span>
             </div>
           </div>
@@ -373,7 +365,7 @@ export default function AdminDashboardPage() {
               type="button"
               className="text-primary font-secondary text-label font-bold flex items-center gap-1 hover:underline cursor-pointer"
             >
-              {tx("Tout voir")} <MIcon name="arrow_forward" className="text-sm" />
+              {tx("Tout voir")} <FaIcon name="arrow_forward" className="text-sm" />
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -414,7 +406,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-md">
           <div className="bg-bg-card p-lg rounded-lg border border-border-default border-l-4 border-l-error">
             <div className="flex items-center gap-sm mb-md text-error">
-              <MIcon name="warning" />
+              <FaIcon name="warning" />
               <h4 className="font-h3 text-h3 font-bold">{tx("Alertes Système")}</h4>
             </div>
             <ul className="space-y-md">
@@ -459,7 +451,7 @@ export default function AdminDashboardPage() {
                 Support Direct
               </button>
             </div>
-            <MIcon
+            <FaIcon
               name="support_agent"
               className="absolute -bottom-4 -right-4 text-[120px] opacity-10 rotate-12 pointer-events-none"
             />
@@ -482,7 +474,7 @@ export default function AdminDashboardPage() {
             {/* En-tête */}
             <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-container-low shrink-0">
               <div className="flex items-center gap-2">
-                <MIcon name="receipt_long" className="text-primary text-xl" />
+                <FaIcon name="receipt_long" className="text-primary text-xl" />
                 <div>
                   <h3 className="font-h2 text-h3 font-bold text-on-surface">
                     {selected.action} — {selected.id}
@@ -498,7 +490,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setSelected(null)}
                 className="p-1.5 text-text-secondary hover:text-on-surface hover:bg-black/5 rounded-full transition-colors cursor-pointer"
               >
-                <MIcon name="close" className="text-xl" />
+                <FaIcon name="close" className="text-xl" />
               </button>
             </div>
 
@@ -525,7 +517,7 @@ export default function AdminDashboardPage() {
               <div className="bg-bg-secondary p-3.5 rounded-lg border border-border-default space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
-                    <MIcon name="person" className="text-sm" />
+                    <FaIcon name="person" className="text-sm" />
                     {tx("Profil de l'Acteur")}
                   </span>
                   <span className="text-micro font-bold text-primary bg-white px-2 py-0.5 rounded border border-border-default">
@@ -534,15 +526,15 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-label pt-1">
                   <div className="flex items-center gap-2">
-                    <MIcon name="badge" className="text-text-tertiary text-base" />
+                    <FaIcon name="badge" className="text-text-tertiary text-base" />
                     <span className="font-bold text-on-surface">{selected.userName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MIcon name="call" className="text-text-tertiary text-base" />
+                    <FaIcon name="call" className="text-text-tertiary text-base" />
                     <span className="font-mono text-text-secondary">{selected.userPhone}</span>
                   </div>
                   <div className="flex items-center gap-2 md:col-span-2">
-                    <MIcon name="location_on" className="text-text-tertiary text-base" />
+                    <FaIcon name="location_on" className="text-text-tertiary text-base" />
                     <span className="text-text-secondary">{selected.userZone}</span>
                   </div>
                 </div>
@@ -569,7 +561,7 @@ export default function AdminDashboardPage() {
               {/* Articles */}
               <div className="space-y-1.5">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
-                  <MIcon name="shopping_bag" className="text-sm" />
+                  <FaIcon name="shopping_bag" className="text-sm" />
                   {tx("Articles / Objet de l'opération")}
                 </span>
                 <div className="bg-white p-3 rounded-lg border border-border-default">
@@ -580,7 +572,7 @@ export default function AdminDashboardPage() {
               {/* Journal d'audit */}
               <div className="space-y-1 pt-1">
                 <span className="text-micro uppercase tracking-wider text-text-tertiary font-bold flex items-center gap-1">
-                  <MIcon name="verified" className="text-sm" />
+                  <FaIcon name="verified" className="text-sm" />
                   {tx("Journal d'Audit Système")}
                 </span>
                 <p className="text-micro font-mono text-text-secondary bg-bg-app p-2.5 rounded border border-border-default">
@@ -595,7 +587,7 @@ export default function AdminDashboardPage() {
                 type="button"
                 className="px-3 py-2 text-label font-medium text-text-secondary hover:bg-border-default/40 rounded-lg transition-colors flex items-center gap-1.5 border border-border-default bg-white cursor-pointer"
               >
-                <MIcon name="download" className="text-base" />
+                <FaIcon name="download" className="text-base" />
                 <span>{tx("Télécharger reçu")}</span>
               </button>
               <div className="flex items-center gap-2">
@@ -610,7 +602,7 @@ export default function AdminDashboardPage() {
                   type="button"
                   className="px-4 py-2 text-label font-bold text-white bg-primary-container hover:bg-primary-hover rounded-lg transition-transform active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
-                  <MIcon name="open_in_new" className="text-base" />
+                  <FaIcon name="open_in_new" className="text-base" />
                   <span>{selected.cta}</span>
                 </button>
               </div>

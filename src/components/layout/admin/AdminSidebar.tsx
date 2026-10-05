@@ -1,9 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import { currentRole, currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
-
 
 interface AdminSidebarProps {
   currentPath?: string;
@@ -62,7 +61,7 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
         aria-current={active ? 'page' : undefined}
         className={active ? ACTIVE_CLASS : IDLE_CLASS}
       >
-        <MIcon name={item.icon} />
+        <FaIcon name={item.icon} />
         <span className="font-secondary text-body">{tx(item.label)}</span>
       </Link>
     );
@@ -100,7 +99,7 @@ export default function AdminSidebar({ currentPath }: AdminSidebarProps) {
       >
         {/* Bascule vers l'espace client (l'admin y a accès) */}
         <Link to="/" className={IDLE_CLASS}>
-          <MIcon name="storefront" />
+          <FaIcon name="storefront" />
           <span className="font-secondary text-body">{tx("Espace client")}</span>
         </Link>
         {/* Utilisateur réellement connecté (plus de profil générique) */}

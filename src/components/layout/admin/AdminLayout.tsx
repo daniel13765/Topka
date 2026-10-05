@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import AdminSidebar from './AdminSidebar';
-import MIcon from '../../shared/MIcon';
+import FaIcon from '../../shared/FaIcon';
 import AdminNotificationBell from './AdminNotificationBell';
 import LangToggle from '../../shared/LangToggle';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tx } from '../../../i18n/tx';
-
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -27,7 +26,7 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
       <header className="fixed top-0 right-0 left-64 h-[52px] bg-white border-b border-border-default flex justify-between items-center px-lg z-40">
         <div className="flex items-center flex-1 max-w-xl">
           <div className="relative w-full">
-            <MIcon
+            <FaIcon
               name="search"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             />
@@ -43,14 +42,14 @@ export default function AdminLayout({ children, currentPath, mainClassName }: Ad
           {/* Vraies notifications (GET /notifications) : compteur, liste, marquer comme lue */}
           <AdminNotificationBell
             className="p-2 text-text-secondary hover:bg-bg-app rounded-full transition-all active:scale-[0.97] cursor-pointer"
-            icon={<MIcon name="notifications" />}
+            icon={<FaIcon name="notifications" />}
             dotClassName="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"
           />
           <button
             type="button"
             className="p-2 text-text-secondary hover:bg-bg-app rounded-full transition-all active:scale-[0.97] cursor-pointer"
           >
-            <MIcon name="help" />
+            <FaIcon name="help" />
           </button>
           <div className="h-8 w-[1px] bg-border-default mx-2" />
           <div className="flex items-center gap-sm">

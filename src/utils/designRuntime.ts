@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { tx } from '../i18n/tx';
+import { markupIcone } from '../components/shared/faIcones';
 
 /**
  * useDesignScript — exécute le script JS d'un code.html Stitch à l'affichage
@@ -11,6 +12,23 @@ import { tx } from '../i18n/tx';
  * - enhanceModals : barre de défilement visible sur les panneaux de modale +
  *   clic en dehors = fermeture (via le close du design de préférence).
  */
+/**
+ * `changerIcone` — remplace l'élément d'icône courant par un autre, attributs et `id` conservés.
+ * Le tracé vient de `markupIcone`, donc de la même table que le composant `FaIcon`.
+ * Passé au script comme `__setIco(el, 'check', 'text-[20px] text-success')`.
+ */
+function changerIcone(el: Element | null | undefined, nom: string, classes?: string): void {
+  if (!el) return;
+  const gabarit = document.createElement('template');
+  gabarit.innerHTML = markupIcone(nom, classes ?? el.getAttribute('class') ?? '');
+  const nouveau = gabarit.content.firstElementChild;
+  if (!nouveau) return;
+  for (const attribut of Array.from(el.attributes)) {
+    if (attribut.name !== 'class') nouveau.setAttribute(attribut.name, attribut.value);
+  }
+  el.replaceWith(nouveau);
+}
+
 type Runtime = { invoke: (code: string, el: Element, event: Event) => unknown };
 
 const EVENT_FOR: Record<string, string> = {
@@ -45,10 +63,12 @@ function injectModalCss() {
 
 function build(script: string): Runtime {
   // Le script du design + une rampe d'invocation dans SON scope (eval local).
-  // tx est injecté pour que les toasts / titres de modale suivent la langue.
-   
+  // tx est injecté pour que les toasts / titres de modale suivent la langue ; __ico et __setIco,
+  // pour qu'ils peignent leurs icônes en Font Awesome comme le reste de l'application.
   const factory = new Function(
     'tx',
+    '__ico',
+    '__setIco',
     `${script}
 ;try {
   if (typeof showToast === 'function') {
@@ -61,8 +81,12 @@ function build(script: string): Runtime {
   }
 } catch (e) {}
 ;return { invoke: function (code, el, event) { return eval(code); } };`,
-  ) as (translate: (fr: string) => string) => Runtime;
-  return factory(tx);
+  ) as (
+    translate: (fr: string) => string,
+    ico: (nom: string, classes?: string) => string,
+    setIco: (el: Element | null | undefined, nom: string, classes?: string) => void,
+  ) => Runtime;
+  return factory(tx, markupIcone, changerIcone);
 }
 
 /** Ferme une modale via le close du design (data-onclick), sinon masquage direct. */
