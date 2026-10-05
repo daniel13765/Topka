@@ -380,7 +380,10 @@ export function normaliserDocuments(raw: unknown): DocumentProfil[] {
       const o = d as Record<string, unknown>;
       const libelle = [o.nom, o.libelle, o.type, o.name, o.document].find((v) => typeof v === 'string' && (v as string).trim());
       if (typeof libelle !== 'string') return null;
-      const valeur = [o.numero, o.value, o.url, o.reference].find((v) => typeof v === 'string' && (v as string).trim());
+      // `valeur` en tête : c'est la clé que l'espace livreur écrit (paramètres → `documents`).
+      const valeur = [o.valeur, o.numero, o.value, o.url, o.reference].find(
+        (v) => typeof v === 'string' && (v as string).trim(),
+      );
       const statut = [o.statut, o.status].find((v) => typeof v === 'string' && (v as string).trim());
       return {
         libelle: libelle.trim(),

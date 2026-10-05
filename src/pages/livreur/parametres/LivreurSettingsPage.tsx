@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -14,15 +21,24 @@ import { alertApiError } from '../../../utils/apiError';
 import { initialsOf } from '../../../routes/authGuard';
 import { fetchLivreurProfile, forgetLivreurProfile, type LivreurProfile } from '../livreurData';
 import {
+  TYPES_PIECE,
+  comptePieces,
   construireCorpsProfil,
+  construireDocuments,
+  documentsModifies,
   erreurMotDePasse,
+  erreurPiece,
   forceDuMotDePasse,
   iconePiece,
   libelleDisponibilite,
+  normaliserPiece,
+  pieceDejaPresente,
   pieceValidee,
   puceConformite,
   telephoneValide,
   urlPhotoValide,
+  type PieceDocumentaire,
+  type PieceSaisie,
 } from './profilUtils';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
@@ -57,7 +73,11 @@ const CTA_MAIN =
  * Règle de données : aucun champ de la maquette n’est rendu éditable s’il n’est pas persisté, et
  * aucun chiffre n’est simulé.
  * - `PUT /profile` (ProfileController) n’écrit côté livreur que `prenom`, `nom`, `nom_complet`,
- *   `telephone`, `image_profil` (+ `documents`) → seuls ces champs sont des contrôles actifs ;
+ *   `telephone`, `image_profil`, `documents` → seuls ces champs sont des contrôles actifs
+ *   (`documents` passe par le même `PUT /profile`, le tableau est remplacé à chaque envoi) ;
+ * - `heure_debut` / `heure_fin` sont bien validés par `PUT /profile`, mais le contrôleur ne les
+ *   applique qu'à `$user->manager` et la table `livreurs` n'a pas ces colonnes : aucun horaire
+ *   n'est donc saisissable par un livreur, et la page n'en propose pas ;
  * - `disponibilite` et `zone_id` ne sont modifiables que par un administrateur
  *   (`PATCH /admin/users/{id}`) → interrupteur et sélecteur de zone rendus désactivés, avec le motif ;
  * - aucune route de dépôt de fichier : la photo reste une URL (max. 500 caractères côté back) ;
@@ -89,6 +109,12 @@ export default function LivreurSettingsPage() {
   const [afficherMdp, setAfficherMdp] = useState(false);
   const [savingMdp, setSavingMdp] = useState(false);
 
+  // Pièces justificatives : copie éditable de `livreurs.documents`, renommée à chaque rechargement.
+  const [pieces, setPieces] = useState<PieceDocumentaire[]>([]);
+  const [pieceEditorie, setPieceEditorie] = useState(false);
+  const [nouvellePiece, setNouvellePiece] = useState<PieceSaisie>({ libelle: '', valeur: '' });
+  const [savingPieces, setSavingPieces] = useState(false);
+
   useEffect(() => {
     let alive = true;
     setErr(null);
@@ -100,6 +126,9 @@ export default function LivreurSettingsPage() {
         setNom(p.nom ?? '');
         setTelephone(p.telephone ?? '');
         setImageProfil(p.image_profil ?? '');
+        setPieces(p.documents);
+        setPieceEditorie(false);
+        setNouvellePiece({ libelle: '', valeur: '' });
       })
       .catch((e) => {
         if (alive) setErr(alertApiError(e, 'livreur-settings-load'));
@@ -180,6 +209,69 @@ export default function LivreurSettingsPage() {
       alertApiError(error, 'livreur-settings-save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const piecesModifiees = useMemo(
+    () => !!profile && documentsModifies(profile.documents, pieces),
+    [profile, pieces],
+  );
+
+  /** Ligne de statut du pied de formulaire : ce que la liste contient vraiment, pas ce que la maquette montre. */
+  const compte = useMemo(() => comptePieces(pieces), [pieces]);
+
+  /**
+   * Liste affichée dans la carte « Véhicule & Conformité ». Pendant l'édition, c'est le brouillon
+   * local (sinon une pièce ajoutée sur un dossier vide resterait invisible) ; `pieces` n'est écrit
+   * sur le serveur que par « Enregistrer les pièces ».
+   */
+  const dossierAffiche = pieceEditorie ? pieces : (profile?.documents ?? []);
+
+  const ouvrirPieces = () => {
+    setPieceEditorie(true);
+    setNouvellePiece({ libelle: '', valeur: '' });
+  };
+
+  const annulerPieces = () => {
+    setPieceEditorie(false);
+    setPieces(profile?.documents ?? []);
+    setNouvellePiece({ libelle: '', valeur: '' });
+  };
+
+  const decrirePiece = (champ: keyof PieceSaisie) => (e: ChangeEvent<HTMLInputElement>) =>
+    setNouvellePiece((p) => ({ ...p, [champ]: e.target.value }));
+
+  const ajouterPiece = (e?: FormEvent) => {
+    e?.preventDefault();
+    const erreur = erreurPiece(nouvellePiece);
+    if (erreur) {
+      toast.error(tx(erreur), { id: 'livreur-settings-doc' });
+      return;
+    }
+    const nette = normaliserPiece(nouvellePiece);
+    if (pieceDejaPresente(nette, pieces)) {
+      toast.error(tx('Cette pièce est déjà au dossier.'), { id: 'livreur-settings-doc' });
+      return;
+    }
+    setPieces((p) => [...p, nette]);
+    setNouvellePiece({ libelle: '', valeur: '' });
+  };
+
+  const retirerPiece = (index: number) => setPieces((p) => p.filter((_, i) => i !== index));
+
+  /** Un `PUT /profile` remplace tout le tableau : on n'envoie que la liste complète, validée. */
+  const enregistrerPieces = async () => {
+    if (!piecesModifiees || savingPieces) return;
+    setSavingPieces(true);
+    try {
+      const res = await authApi.updateProfile({ documents: construireDocuments(pieces) });
+      setPieceEditorie(false);
+      toast.success(res?.message ?? tx('Documents mis à jour avec succès.'));
+      setReloadKey((k) => k + 1);
+    } catch (error) {
+      alertApiError(error, 'livreur-settings-doc');
+    } finally {
+      setSavingPieces(false);
     }
   };
 
@@ -549,9 +641,89 @@ export default function LivreurSettingsPage() {
                   </div>
 
                   {/* Pièces justificatives (livreurs.documents) */}
-                  {profile.documents.length > 0 ? (
+                  {pieceEditorie ? (
+                    <div className="tokpa-pop flex flex-col gap-sm rounded-xl border border-border-default bg-bg-secondary p-md">
+                      <div className="grid grid-cols-1 gap-sm sm:grid-cols-2">
+                        <div className="flex flex-col gap-xs">
+                          <label className={LABEL} htmlFor="piece-libelle">
+                            {tx('Pièce')}
+                          </label>
+                          <input
+                            id="piece-libelle"
+                            className={INPUT}
+                            list="types-piece"
+                            value={nouvellePiece.libelle}
+                            onChange={decrirePiece('libelle')}
+                            placeholder={tx('Permis de conduire')}
+                            maxLength={120}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                ajouterPiece();
+                              }
+                            }}
+                          />
+                          <datalist id="types-piece">
+                            {TYPES_PIECE.map((t) => (
+                              <option key={t} value={t} />
+                            ))}
+                          </datalist>
+                        </div>
+                        <div className="flex flex-col gap-xs">
+                          <label className={LABEL} htmlFor="piece-valeur">
+                            {tx('URL du document ou référence')}
+                          </label>
+                          <input
+                            id="piece-valeur"
+                            className={INPUT}
+                            value={nouvellePiece.valeur}
+                            onChange={decrirePiece('valeur')}
+                            placeholder="https://…  ·  n° 12 345 678"
+                            maxLength={500}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                ajouterPiece();
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-sm">
+                        <span className="font-micro text-micro text-text-secondary">
+                          {tx('Le statut reste à l’initiative de l’administration : une pièce déclarée apparait « Non vérifié ».')}
+                        </span>
+                        <button type="button" onClick={ajouterPiece} className={CTA_SOFT}>
+                          <FaIcon name="add" className="text-[14px]" />
+                          {tx('Ajouter au dossier')}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-end gap-sm border-t border-border-default pt-sm">
+                        <span className="mr-auto font-micro text-micro text-text-secondary">
+                          {compte.total === 0
+                            ? tx('Aucune pièce au dossier')
+                            : tr(
+                                `${compte.total} pièce(s) au dossier, dont ${compte.verifiees} vérifiée(s) par l’administration.`,
+                                `${compte.total} document(s) on file, ${compte.verifiees} verified by the admin.`,
+                              )}
+                          {piecesModifiees ? ` · ${tx('Modifications non enregistrées')}` : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={enregistrerPieces}
+                          disabled={!piecesModifiees || savingPieces}
+                          className={CTA_MAIN}
+                        >
+                          <FaIcon name={savingPieces ? 'refresh' : 'check'} className={clsx('text-[16px]', savingPieces && 'animate-spin')} />
+                          {savingPieces ? tx('Enregistrement…') : tx('Enregistrer les pièces')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {dossierAffiche.length > 0 ? (
                     <div className="flex flex-col gap-sm">
-                      {profile.documents.map((d, i) => (
+                      {dossierAffiche.map((d, i) => (
                         <div
                           key={`${d.libelle}-${i}`}
                           className="tokpa-fade flex items-center justify-between gap-md rounded-xl bg-bg-secondary p-sm px-md"
@@ -579,6 +751,17 @@ export default function LivreurSettingsPage() {
                               ? d.statut.replace(/_/g, ' ')
                               : tx('Non vérifié')}
                           </span>
+                          {pieceEditorie ? (
+                            <button
+                              type="button"
+                              onClick={() => retirerPiece(i)}
+                              className="shrink-0 rounded-lg p-xs text-text-tertiary transition-all hover:bg-error-light hover:text-error-dark"
+                              title={tx('Retirer cette pièce du dossier')}
+                              aria-label={tx('Retirer cette pièce du dossier')}
+                            >
+                              <FaIcon name="delete" className="text-[16px]" />
+                            </button>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -589,7 +772,11 @@ export default function LivreurSettingsPage() {
                         {tx('Aucune pièce au dossier')}
                       </p>
                       <p className="max-w-[420px] font-body text-body text-text-secondary">
-                        {tx('La maquette affiche permis, assurance et CNI : le champ `documents` du livreur est vide, rien n’est inventé.')}
+                        {pieceEditorie
+                          ? tx('Rien au dossier pour le moment : complète le formulaire ci-dessus, puis enregistre.')
+                          : tx(
+                              'Le dossier du livreur est vide : rien n’est inventé. « Déclarer une pièce » le remplit avec le nom et la référence que tu saisis.',
+                            )}
                       </p>
                     </div>
                   )}
@@ -600,12 +787,14 @@ export default function LivreurSettingsPage() {
                     </span>
                     <button
                       type="button"
-                      disabled
+                      disabled={!profile}
+                      onClick={pieceEditorie ? annulerPieces : ouvrirPieces}
                       className={CTA_SOFT}
-                      title={tx('Aucune route de dépôt de fichiers : le dossier est complété par l’administration.')}
-                      onClick={() => toast(tx('Dépôt de pièces indisponible côté livreur.'), { id: 'livreur-settings-doc' })}
+                      title={tx(
+                        'Aucune route de dépôt de fichiers : tu déclares ici le nom et la référence de chaque pièce, le document lui-même reste à fournir à l’administration.',
+                      )}
                     >
-                      {tx('Mettre à jour les pièces')}
+                      {pieceEditorie ? tx('Annuler') : tx('Déclarer une pièce')}
                     </button>
                   </div>
                 </section>

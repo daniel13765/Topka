@@ -102,3 +102,88 @@ export function libelleDisponibilite(disponible: boolean | null): { cle: string;
   if (disponible == null) return { cle: 'Statut inconnu', enService: false };
   return disponible ? { cle: 'En service', enService: true } : { cle: 'Hors service', enService: false };
 }
+
+/* ---------------------------------------------------------------------------
+ * Pièces justificatives (`livreurs.documents`).
+ *
+ * `PUT /profile` valide `documents` comme tableau nullable puis fait
+ * `$user->livreur->update(['documents' => $data['documents']])` : le champ est donc bien
+ * enregistrable par le livreur, mais il est **remplacé** à chaque envoi — d'où
+ * `construireDocuments`, qui renvoie la liste complète. Aucune route de dépôt de fichier
+ * n'existe : une pièce se déclare par son nom et sa référence (URL absolue ou numéro).
+ * ------------------------------------------------------------------------- */
+
+/** Une ligne du JSON `livreurs.documents`, telle que `normaliserDocuments` la produit. */
+export interface PieceDocumentaire {
+  libelle: string;
+  valeur?: string;
+  statut?: string;
+}
+
+/** Libellés attendus par l'administration ; le champ reste libre, ce n'est qu'une aide. */
+export const TYPES_PIECE = [
+  'Permis de conduire',
+  'Assurance responsabilité civile',
+  'Carte nationale d’identité',
+  'Carte grise du véhicule',
+  'Registre de commerce',
+] as const;
+
+/** Saisie brute du formulaire, avant nettoyage. */
+export interface PieceSaisie {
+  libelle: string;
+  valeur: string;
+}
+
+/** `libelle` max. 120 (borné pour rester lisible en liste), `valeur` max. 500 comme l'URL de photo. */
+export function erreurPiece(piece: PieceSaisie): string | null {
+  const libelle = piece.libelle.trim();
+  const valeur = piece.valeur.trim();
+  if (!libelle) return 'Nomme la pièce que tu déclares.';
+  if (libelle.length > 120) return 'Le nom de la pièce dépasse 120 caractères.';
+  if (!valeur) return 'Indique l’URL du document ou sa référence.';
+  if (valeur.length > 500) return 'La référence dépasse 500 caractères.';
+  return null;
+}
+
+export function normaliserPiece(piece: PieceSaisie): PieceSaisie {
+  return { libelle: piece.libelle.trim(), valeur: piece.valeur.trim() };
+}
+
+/** Un même dossier ne doit pas porter deux fois la même pièce (comparaison insensible à la casse). */
+export function pieceDejaPresente(candidat: { libelle: string }, existantes: { libelle: string }[]): boolean {
+  const cle = candidat.libelle.trim().toLowerCase();
+  return existantes.some((d) => d.libelle.trim().toLowerCase() === cle);
+}
+
+/**
+ * Corps `documents` envoyé au backend : libellé et référence nettoyés, `statut` conservé tel quel
+ * (il appartient à l'administration), lignes vides écartées.
+ */
+export function construireDocuments(pieces: PieceDocumentaire[]): PieceDocumentaire[] {
+  return pieces
+    .map((p) => {
+      const libelle = (p.libelle ?? '').trim();
+      const valeur = (p.valeur ?? '').trim();
+      const statut = (p.statut ?? '').trim();
+      if (!libelle) return null;
+      return {
+        libelle,
+        ...(valeur ? { valeur } : {}),
+        ...(statut ? { statut } : {}),
+      } satisfies PieceDocumentaire;
+    })
+    .filter((p): p is PieceDocumentaire => p !== null);
+}
+
+/** Le dossier a-t-il changé, une fois les deux côtés normalisés (évite un « enregistrer » fantôme). */
+export function documentsModifies(avant: PieceDocumentaire[], apres: PieceDocumentaire[]): boolean {
+  return JSON.stringify(construireDocuments(avant)) !== JSON.stringify(construireDocuments(apres));
+}
+
+/** Dénombrement affiché sous le formulaire : rien qui viendrait de la maquette. */
+export function comptePieces(pieces: PieceDocumentaire[]): { total: number; declarees: number; verifiees: number } {
+  // `pieceValidee` reste la seule source du verdict : la liste ne doit pas se colorer autrement que la puce.
+  const verifiees = pieces.filter((p) => pieceValidee(p.statut)).length;
+  return { total: pieces.length, declarees: pieces.length - verifiees, verifiees };
+}
