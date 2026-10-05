@@ -265,7 +265,7 @@ export default function AdminUsersPage() {
 
   const validateStep1 = (): string | null => {
     const parts = newName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length < 2) return tx("Indiquez le prénom et le nom (ex : Sègla Hounkpati).");
+    if (parts.length < 2) return tx("Indiquez le prénom et le nom.");
     if (!/^\S+@\S+\.\S+$/.test(newEmail.trim())) return tx("L'adresse email est obligatoire (connexion et définition du mot de passe).");
     if (!/^\d{8,10}$/.test(newPhone.replace(/\D/g, ''))) return tx('Le téléphone doit comporter 8 à 10 chiffres.');
     if (needsZone && !newZone) return tx('Choisissez la zone du livreur ou du manager.');
@@ -821,7 +821,7 @@ export default function AdminUsersPage() {
                 <input
                   className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-gray-900 transition-all placeholder:text-gray-400"
                   id="newUserName"
-                  placeholder={tx("Ex: Sègla Hounkpati")}
+                  placeholder={tx("Prénom et nom")}
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -931,7 +931,7 @@ export default function AdminUsersPage() {
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurCip"
                     maxLength={10}
-                    placeholder="Ex: 1048291048"
+                    placeholder={tx("10 chiffres")}
                     type="text"
                   />
                 </div>
@@ -942,7 +942,7 @@ export default function AdminUsersPage() {
                   <input
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurPermis"
-                    placeholder="Ex: BJ-2023-A1-4921"
+                    placeholder={tx("Format BJ-AAAA-S1-0000")}
                     type="text"
                   />
                 </div>
@@ -965,7 +965,7 @@ export default function AdminUsersPage() {
                   <input
                     className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 font-mono text-gray-900 placeholder:text-gray-400"
                     id="livreurPlaque"
-                    placeholder="Ex: 2A 9402 RB"
+                    placeholder={tx("Format 0A 0000 XX")}
                     type="text"
                   />
                 </div>

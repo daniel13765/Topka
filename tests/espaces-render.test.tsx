@@ -69,6 +69,8 @@ import AdminCategoriesPage from '../src/pages/admin/AdminCategoriesPage';
 import AdminZonesPage from '../src/pages/admin/AdminZonesPage';
 import AdminOrdersPage from '../src/pages/admin/AdminOrdersPage';
 import AdminParametresPage from '../src/pages/admin/AdminParametresPage';
+import AdminBddPage from '../src/pages/admin/AdminBddPage';
+import AdminSecuritePage from '../src/pages/admin/AdminSecuritePage';
 import AdminClesApiPage from '../src/pages/admin/AdminClesApiPage';
 
 /**
@@ -175,10 +177,29 @@ describe('espace administrateur : amorçage', () => {
     expect(html).toMatch(/Chargement|Aucun|aperçu maquette|indisponible/i);
   });
 
-  it('marque explicitement les écrans sans endpoint backend', () => {
-    const systeme = rendu(AdminSystemePage);
-    expect(systeme).toContain('aperçu maquette');
-    const cles = rendu(AdminClesApiPage);
-    expect(cles).toContain('aperçu maquette');
+  // Cinq écrans n'ont aucune route correspondante côté Laravel : ils posent le cadre et restent vides.
+  // La maquette d'origine y affichait chiffiffres d'infrastructure, secrets et noms de personnes inventés.
+  it.each([
+    ['console système', () => AdminSystemePage],
+    ['clés API et webhooks', () => AdminClesApiPage],
+    ['sécurité et rôles', () => AdminSecuritePage],
+    ['base de données et jobs', () => AdminBddPage],
+    ['paramètres de la plateforme', () => AdminParametresPage],
+  ])('%s : le cadre est posé, rien n’est inventé', (_nom, Page) => {
+    const html = rendu(Page());
+    expect(html).toContain('Non branch');
+    expect(html).toContain('routes/api.php');
+    expect(html).toContain('0 ligne');
+    for (const interdit of ['HashiCorp', 'Cloudflare', 'tokpa_live_sec', 'Koffi', '99.98', 'kill switch', 'AWS KMS', '1,420']) {
+      expect(html.toLowerCase()).not.toContain(interdit.toLowerCase());
+    }
+  });
+
+  it('aucun écran admin ne remplit une table avec des lignes de démonstration', () => {
+    for (const [nom, Page] of [['système', () => AdminSystemePage], ['clés API', () => AdminClesApiPage]] as const) {
+      const html = rendu(Page());
+      // aucune ligne de tableau fabriquée : les écrans sans endpoint n'affichent pas de <tr> de données
+      expect(html, nom).not.toMatch(/<tr class="hover:bg-bg-secondary/);
+    }
   });
 });

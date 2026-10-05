@@ -11,7 +11,7 @@ import { useAppDispatch, useAppSelector } from '../../../hooks/useStore';
 import { clear, remove, setQuantity, selectCount, selectSubtotal, selectSavings } from '../../../store/slices/cart/cartSlice';
 import { authApi, catalogApi, landmarksApi, ordersApi, paymentsApi } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
-import { tx } from '../../../i18n/tx';
+import { tr, tx } from '../../../i18n/tx';
 
 
 interface ApiLandmark {
@@ -199,9 +199,16 @@ export default function CartPage() {
           const isRealFedaPay = /fedapay\.com/i.test(redirectUrl);
           if (isRealFedaPay) {
             window.open(redirectUrl, '_blank', 'noopener');
-            toast.success('Redirection vers FedaPay…');
+            toast.success(tr('Ouverture de la page de paiement FedaPay.', 'Opening the FedaPay checkout page.'));
           } else {
-            toast.success(tx("Paiement FedaPay initialisé (mode sandbox dev)."));
+            // URL renvoyée par le backend mais hors domaine FedaPay : on ne fait pas croire à un paiement lancé.
+            toast(
+              tr(
+                'Le backend a renvoyé une URL de paiement qui n’est pas celle de FedaPay : aucune page n’a été ouverte.',
+                'The backend returned a payment URL that is not FedaPay’s: no checkout page was opened.',
+              ),
+              { icon: '⚠', duration: 6000 },
+            );
           }
         }
       } catch (payErr) {

@@ -226,7 +226,7 @@ export default function InscriptionPage() {
                     <FaIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
                       type="text"
-                      placeholder="Ex: Jean"
+                      placeholder={tx("Ton prénom")}
                       value={profil.prenom}
                       onChange={(e) => setProfilField('prenom', e.target.value)}
                       className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm outline-none ${
@@ -243,7 +243,7 @@ export default function InscriptionPage() {
                     <FaIcon name="person" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                     <input
                       type="text"
-                      placeholder="Ex: Dossou"
+                      placeholder={tx("Ton nom de famille")}
                       value={profil.nom}
                       onChange={(e) => setProfilField('nom', e.target.value)}
                       className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm outline-none ${
@@ -261,7 +261,7 @@ export default function InscriptionPage() {
                   <FaIcon name="mail" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
                   <input
                     type="email"
-                    placeholder="jean.dossou@email.com"
+                    placeholder="prenom.nom@exemple.com"
                     value={profil.email}
                     onChange={(e) => setProfilField('email', e.target.value)}
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm outline-none ${

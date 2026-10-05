@@ -18,6 +18,20 @@ Cette version conserve la direction visuelle TOKPa tout en intégrant l’archit
 - Fontsource Inter ; icônes Font Awesome (`@fortawesome/react-fontawesome`) dans les espaces client, manager et livreur
 - Vitest (environnement `node`) : règles métier, rendu serveur des écrans, garde de découpage du bundle, couverture du jeu d’icônes
 
+### Aucun contenu fabriqué
+
+Aucun écran n’affiche de donnée inventée : pas de nom d’emprunt, pas de commande d’exemple, pas de
+pourcentage d’infrastructure, pas de faux secret, pas de valeur préremplie dans un formulaire que le
+backend ne sait pas lire. Cinq écrans d’administration et deux écrans manager n’ont pas de route
+correspondante dans `routes/api.php` (groupes `role:admin`, `role:super_admin`, `role:manager`) : ils
+rendent le cadre posé par `src/components/shared/EcranSansEndpoint.tsx` — routes attendues, rubriques
+qui se rempliront, et la mention « Non branché — aucune route backend (B-16) » — et restent vides.
+Les tableaux branchés, eux, affichent l’état renvoyé par l’API : chargement, vide, ou erreur.
+
+`tests/sans-contenu-fabrique.test.ts` verrouille la règle : crible des motifs qui trahissaient du
+contenu inventé, rendu des sept écrans concernés, et absence de clé de traduction orpheline dans
+`src/i18n/phrases.ts` (une clé morte est presque toujours le vestige d’un écran retiré).
+
 ### Icônes
 
 TOKPa rend ses icônes par `src/components/shared/FaIcon.tsx`, qui traduit un nom de ligature

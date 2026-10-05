@@ -555,7 +555,7 @@ export default function ProfilePage() {
                   type="text"
                   value={formNom}
                   onChange={(e) => setFormNom(e.target.value)}
-                  placeholder="Ex : Maison Maman, Carrefour…"
+                  placeholder={tx("Nom du point de repère")}
                   required
                   className="w-full px-md py-2 rounded-lg border border-border-default focus:border-primary outline-none"
                 />
