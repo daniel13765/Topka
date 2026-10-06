@@ -1,5 +1,5 @@
 import { authApi, catalogApi, livreurApi } from '../../services/api';
-import { uiLang } from '../../i18n/tx';
+import { tx, uiLang } from '../../i18n/tx';
 import { listOf, unwrap } from '../../services/api/unwrap';
 import { normaliserPolygone } from '../../utils/googleMaps';
 
@@ -10,15 +10,31 @@ import { normaliserPolygone } from '../../utils/googleMaps';
  *  GET /livreur/deliveries (courses assignées en_attente / en_preparation / en_livraison, non paginé),
  *  GET /livreur/history (livrées, 20 par page), PATCH …/accept | refuse | status, POST /livreur/position,
  *  GET /dashboard (commandes, en_cours du livreur), GET /profile (disponibilité, zone), GET /zones.
- * ⚠️ OrderResource n'expose ni le client (nom, téléphone) ni les coordonnées du point de repère (B-25).
+ * Le client (nom, téléphone) arrive depuis `GET /livreur/deliveries` : le contrôleur charge la relation
+ * `client`, et OrderResource l'expose (B-25 est donc levé pour la liste des courses). `GET /livreur/history`
+ * ne charge QUE `items.product` + `landmark` : le nom du client y reste absent, et les coordonnées du
+ * point de repère manquent partout (résolues via GET /zones, B-25).
  */
 export interface LivreurOrderItem {
   id: number;
-  product_id: number;
+  /** `null` depuis la migration du 29/09 : un produit retiré du catalogue ne supprime plus la ligne. */
+  product_id: number | null;
+  /** Libellé figé sur la ligne (migration du 01/10) : c'est lui qui survit au retrait du produit. */
   nom?: string | null;
   quantite: number;
   prix_unitaire: number;
 }
+
+/**
+ * Libellé d'une ligne de commande, sans rien inventer : le nom figé sur la ligne d'abord,
+ * l'identifiant produit ensuite, et un retrait assumé quand ni l'un ni l'autre n'est venu.
+ */
+export const libelleArticle = (it: LivreurOrderItem): string => {
+  const nom = String(it?.nom ?? '').trim();
+  if (nom) return nom;
+  if (it?.product_id != null) return `Produit #${it.product_id}`;
+  return tx('Produit retiré du catalogue');
+};
 
 export interface LivreurOrder {
   id: number;
@@ -34,7 +50,24 @@ export interface LivreurOrder {
     nom?: string | null;
     zone_id?: number | null;
   } | null;
+  /** Charge par `LivreurDeliveryController::index` uniquement (`with([... 'client'])`). */
+  client?: { id?: number | null; nom_complet?: string | null; telephone?: string | null } | null;
+  payment?: { id?: number | null; montant?: number; statut?: string | null; methode?: string | null } | null;
 }
+
+/**
+ * Contact client, pris sur la réponse telle quelle : pas de valeur de repli inventee.
+ * `telephone` arrive tel quel de `utilisateurs.telephone` (Benin, sans +), d'ou le filtre sur les
+ * chiffres avant de construire l'URI `tel:`.
+ */
+export const clientNom = (o: LivreurOrder | null | undefined): string =>
+  String(o?.client?.nom_complet ?? '').trim();
+
+export const clientTelephone = (o: LivreurOrder | null | undefined): string => {
+  const brut = String(o?.client?.telephone ?? '').trim();
+  const chiffres = brut.replace(/\D/g, '');
+  return chiffres.length >= 8 ? chiffres : '';
+};
 
 /** OrderResource enveloppe chaque commande dans { success, message, data } (même en liste). */
 export const unwrapOrder = (r: any): LivreurOrder => (r?.data ?? r) as LivreurOrder;

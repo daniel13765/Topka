@@ -1,5 +1,5 @@
 import type { LivreurOrder } from '../livreurData';
-import { articlesCount, dateHeure, destination, tokRef } from '../livreurData';
+import { articlesCount, dateHeure, destination, libelleArticle, tokRef } from '../livreurData';
 import { fmtFcfa } from '../../../services/api/unwrap';
 
 export interface RecuLigne {
@@ -21,7 +21,7 @@ export interface RecuOptions {
  */
 export function lignesRecu(order: LivreurOrder, opts: RecuOptions = {}): RecuLigne[] {
   const items = (order.items ?? [])
-    .map((it) => `${it.quantite}x ${it.nom ?? `Produit #${it.product_id}`} — ${fmtFcfa(it.prix_unitaire)}`)
+    .map((it) => `${it.quantite}x ${libelleArticle(it)} — ${fmtFcfa(it.prix_unitaire)}`)
     .join(' / ');
   return [
     { label: 'Commande', value: tokRef(order.id) },

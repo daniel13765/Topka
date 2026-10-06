@@ -16,6 +16,8 @@ import { listenPrivate } from '../../../services/realtime/echo';
 import { idCommandeDunEvenement } from '../../../utils/realtimeEvents';
 import { currentUserName } from '../../../routes/authGuard';
 import {
+  clientNom,
+  clientTelephone,
   dateHeure,
   destination,
   etaMinutes,
@@ -28,6 +30,7 @@ import {
   URBAN_SPEED_KMH,
   type LandmarkGeo,
   type LivreurOrder,
+  libelleArticle,
 } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
@@ -353,7 +356,13 @@ export default function LivreurCoursePage() {
     </div>
   );
 
-  /** Contact client : l'API ne transmet ni téléphone ni messagerie côté livreur → boutons désactivés. */
+  /**
+   * Contact client : `GET /livreur/deliveries` charge la relation `client`, donc le numéro réellement
+   * transmis ouvre un lien `tel:`. Sans numéro exploitable, l'appel reste désactivé et le titre le dit.
+   * La messagerie, elle, est toujours refusée au rôle livreur : `/conversations` reste sous
+   * `role:client,admin` (B-21), même si ChatController sait déjà traiter `livreur_id`.
+   */
+  const tel = clientTelephone(order);
   const contactButtons = (variant: 'mobile' | 'desktop') => (
     <div
       className={clsx(
@@ -369,31 +378,42 @@ export default function LivreurCoursePage() {
             label: tx('Appeler'),
             disabledCls:
               variant === 'mobile' ? 'bg-success-light text-success-dark' : 'bg-white text-on-surface-variant',
-            reason: tx("Numéro du client non transmis par l'API"),
+            href: tel ? `tel:${tel}` : null,
+            raison: tel
+              ? `${tx('Appeler')} ${clientNom(order) || tx('le client')} · ${tel}`
+              : tx('Numéro du client non transmis par GET /livreur/deliveries'),
           },
           {
             key: 'chat_bubble',
             label: variant === 'mobile' ? tx('Message') : tx('Chat'),
             disabledCls: variant === 'mobile' ? 'bg-info-light text-info-dark' : 'bg-white text-on-surface-variant',
-            reason: tx('Messagerie non ouverte aux livreurs par le backend'),
+            href: null,
+            raison: tx('Messagerie non ouverte aux livreurs par le backend'),
           },
         ] as const
-      ).map((b) => (
-        <button
-          key={b.key}
-          type="button"
-          disabled
-          title={b.reason}
-          className={clsx(
-            'flex cursor-not-allowed items-center justify-center gap-2 rounded-[10px] font-h3 opacity-60 transition-all',
-            variant === 'mobile' ? 'py-4' : 'border border-border-default py-sm text-sm',
-            b.disabledCls,
-          )}
-        >
-          <FaIcon name={b.key} className={variant === 'mobile' ? 'text-[20px]' : 'text-[16px]'} />
-          {b.label}
-        </button>
-      ))}
+      ).map((b) => {
+        const classe = clsx(
+          'flex items-center justify-center gap-2 rounded-[10px] font-h3 transition-all',
+          variant === 'mobile' ? 'py-4' : 'border border-border-default py-sm text-sm',
+          b.disabledCls,
+          b.href ? 'hover:-translate-y-px active:scale-[0.98]' : 'cursor-not-allowed opacity-60',
+        );
+        const contenu = (
+          <>
+            <FaIcon name={b.key} className={variant === 'mobile' ? 'text-[20px]' : 'text-[16px]'} />
+            {b.label}
+          </>
+        );
+        return b.href ? (
+          <a key={b.key} href={b.href} title={b.raison} className={classe}>
+            {contenu}
+          </a>
+        ) : (
+          <button key={b.key} type="button" disabled title={b.raison} className={classe}>
+            {contenu}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -410,7 +430,7 @@ export default function LivreurCoursePage() {
         {(order.items ?? []).map((it) => (
           <div key={it.id} className="flex items-center justify-between rounded-lg bg-bg-app px-md py-sm">
             <p className="text-sm">
-              <span className="font-bold text-primary">{it.quantite}x</span> {it.nom ?? `Produit #${it.product_id}`}
+              <span className="font-bold text-primary">{it.quantite}x</span> {libelleArticle(it)}
             </p>
             <span className="text-xs text-on-surface-variant">{fmtFcfa(it.prix_unitaire)}</span>
           </div>
@@ -542,7 +562,9 @@ export default function LivreurCoursePage() {
               {primaryAction}
 
               <p className="mt-sm text-[11px] text-on-surface-variant">
-                {tx('Coordonnées du client et messagerie livreur non encore fournies par l’API.')}
+                {tel
+                  ? tx('Messagerie non ouverte aux livreurs par le backend : seul le chat reste désactivé.')
+                  : tx('GET /livreur/deliveries n’a pas renvoyé de numéro : appel et chat restent désactivés.')}
               </p>
             </div>
           </div>
@@ -608,7 +630,9 @@ export default function LivreurCoursePage() {
               </div>
               <div className="mt-lg">{contactButtons('desktop')}</div>
               <p className="mt-sm text-[11px] text-on-surface-variant">
-                {tx('Coordonnées du client et messagerie livreur non encore fournies par l’API.')}
+                {tel
+                  ? tx('Messagerie non ouverte aux livreurs par le backend : seul le chat reste désactivé.')
+                  : tx('GET /livreur/deliveries n’a pas renvoyé de numéro : appel et chat restent désactivés.')}
               </p>
             </div>
 

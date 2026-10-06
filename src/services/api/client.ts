@@ -24,10 +24,26 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercepteur pour intercepter les erreurs 401
+// Intercepteur pour intercepter les erreurs 401 et 423
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 423 + code `two_fa_required` (App\Http\Middleware\EnsureTwoFA) : le token Sanctum est valide,
+    // mais le second facteur n'a pas été saisi dans cette session et TOUTE route authentifiée reste
+    // verrouillée. Le code à 6 chiffres part par e-mail (TwoFAService, valable 10 min) : on rend
+    // l'adresse disponible à /verification-2fa et l'evenement ci-dessous fait la navigation.
+    if (error.response?.status === 423 && error.response?.data?.code === 'two_fa_required') {
+      try {
+        const email = JSON.parse(localStorage.getItem('tokpa_user') ?? '{}')?.email;
+        if (email && !localStorage.getItem('tokpa_pending_email')) {
+          localStorage.setItem('tokpa_pending_email', String(email));
+        }
+      } catch {
+        // `tokpa_user` illisible : /verification-2fa renverra de lui-même vers /connexion
+      }
+      window.dispatchEvent(new Event('tokpa:2fa-required'));
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401) {
       const hadSession = !!localStorage.getItem('tokpa_token');
       localStorage.removeItem('tokpa_token');

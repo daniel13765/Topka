@@ -15,6 +15,7 @@ import {
   fmtDuree,
   tokRef,
   type LivreurOrder,
+  libelleArticle,
 } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
@@ -205,7 +206,7 @@ export default function LivreurRecapPage() {
                           {it.quantite}x
                         </span>
                         <span className="truncate text-sm font-medium text-text-main">
-                          {it.nom ?? `Produit #${it.product_id}`}
+                          {libelleArticle(it)}
                         </span>
                       </div>
                       <span className="shrink-0 rounded-full bg-bg-app px-2.5 py-1 text-xs font-medium text-text-secondary">

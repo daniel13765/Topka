@@ -23,6 +23,7 @@ import {
   statutLabel,
   tokRef,
   type LivreurOrder,
+  libelleArticle,
 } from '../livreurData';
 import { telechargerRecu } from './recuCourse';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -659,7 +660,7 @@ export default function LivreurHistoryPage() {
                 <div className="flex justify-between gap-md text-[13px]">
                   <span className="shrink-0 text-text-secondary">{tx('Articles livrés')} ({articlesCount(selected)})</span>
                   <span className="text-right font-medium text-text-main">
-                    {(selected.items ?? []).map((it) => `${it.quantite}x ${it.nom ?? `Produit #${it.product_id}`}`).join(', ') || '—'}
+                    {(selected.items ?? []).map((it) => `${it.quantite}x ${libelleArticle(it)}`).join(', ') || '—'}
                   </span>
                 </div>
                 <div className="flex justify-between text-[13px]">

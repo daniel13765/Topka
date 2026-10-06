@@ -273,3 +273,49 @@ describe('profil du livreur : champs réellement persistés', () => {
     expect(nu.documents).toEqual([]);
   });
 });
+
+describe('contact client transmis par GET /livreur/deliveries', () => {
+  it('lit le nom et le numero reellement presents sur la ressource', async () => {
+    const { clientNom, clientTelephone } = await import('../src/pages/livreur/livreurData');
+    const commande = {
+      id: 1, montant_total: 0, frais_livraison: 0, statut: 'en_livraison',
+      client: { id: 7, nom_complet: 'Amenan Dossou', telephone: '229 61 00 00 04' },
+    };
+    expect(clientNom(commande)).toBe('Amenan Dossou');
+    expect(clientTelephone(commande)).toBe('22961000004');
+  });
+
+  it('rend le contact indisponible plutot que invente', async () => {
+    const { clientNom, clientTelephone } = await import('../src/pages/livreur/livreurData');
+    const sansRien = { id: 2, montant_total: 0, frais_livraison: 0, statut: 'en_attente' };
+    expect(clientNom(sansRien)).toBe('');
+    expect(clientTelephone(sansRien)).toBe('');
+    // commande chargee sans la relation client (GET /livreur/history) : rien a afficher
+    expect(clientTelephone({ ...sansRien, client: null })).toBe('');
+    // un numero trop court pour composer n'est pas exploite
+    expect(clientTelephone({ ...sansRien, client: { telephone: '12 34' } })).toBe('');
+    expect(clientTelephone(null)).toBe('');
+    expect(clientNom(undefined)).toBe('');
+  });
+});
+
+describe('ligne de commande quand le produit disparait du catalogue', () => {
+  const ligne = (sur: Record<string, unknown>) => ({ id: 9, quantite: 2, prix_unitaire: 500, ...sur });
+
+  it('utilise le nom fige sur la ligne', async () => {
+    const { libelleArticle } = await import('../src/pages/livreur/livreurData');
+    expect(libelleArticle(ligne({ product_id: 12, nom: 'Tomate grappe' }))).toBe('Tomate grappe');
+  });
+
+  it('retombe sur l’identifiant quand seul product_id est présent', async () => {
+    const { libelleArticle } = await import('../src/pages/livreur/livreurData');
+    expect(libelleArticle(ligne({ product_id: 12 }))).toBe('Produit #12');
+  });
+
+  it('dit le retrait quand product_id est null et le nom absent (migrations 29/09 et 01/10)', async () => {
+    const { libelleArticle } = await import('../src/pages/livreur/livreurData');
+    expect(libelleArticle(ligne({ product_id: null, nom: null }))).toBe('Produit retiré du catalogue');
+    expect(libelleArticle(ligne({ product_id: null, nom: '   ' }))).toBe('Produit retiré du catalogue');
+    expect(libelleArticle(ligne({ product_id: 0, nom: '' }))).toBe('Produit #0');
+  });
+});

@@ -42,3 +42,41 @@ describe('API client session interceptor', () => {
     expect(localStorage.getItem('tokpa_token')).toBe('abc');
   });
 });
+
+describe('API client 423 two_fa_required (middleware EnsureTwoFA)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('window', { dispatchEvent: vi.fn() });
+  });
+
+  it('garde le token, annonce le second facteur et rend l’email à /verification-2fa', async () => {
+    localStorage.setItem('tokpa_token', 'abc');
+    localStorage.setItem('tokpa_user', JSON.stringify({ email: 'livreur@tokpa.bj' }));
+    const err = { response: { status: 423, data: { message: 'Vérification 2FA requise.', code: 'two_fa_required' } } };
+    await expect(responseRejected()(err)).rejects.toBe(err);
+    expect(localStorage.getItem('tokpa_token')).toBe('abc');
+    expect(localStorage.getItem('tokpa_pending_email')).toBe('livreur@tokpa.bj');
+    expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne remplace pas une adresse déjà en attente et ignore un 423 sans code', async () => {
+    localStorage.setItem('tokpa_pending_email', 'client@tokpa.bj');
+    const sansCode = { response: { status: 423, data: {} } };
+    await expect(responseRejected()(sansCode)).rejects.toBeTruthy();
+    expect(window.dispatchEvent).not.toHaveBeenCalled();
+
+    localStorage.setItem('tokpa_user', JSON.stringify({ email: 'livreur2@tokpa.bj' }));
+    const requis = { response: { status: 423, data: { code: 'two_fa_required' } } };
+    await expect(responseRejected()(requis)).rejects.toBeTruthy();
+    expect(localStorage.getItem('tokpa_pending_email')).toBe('client@tokpa.bj');
+    expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+  });
+
+  it('survit à un tokpa_user illisible', async () => {
+    localStorage.setItem('tokpa_user', '{ pas du json');
+    const err = { response: { status: 423, data: { code: 'two_fa_required' } } };
+    await expect(responseRejected()(err)).rejects.toBe(err);
+    expect(localStorage.getItem('tokpa_pending_email')).toBeNull();
+    expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+  });
+});

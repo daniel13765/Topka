@@ -176,6 +176,24 @@ export function guardRoute({
 }
 
 /**
+ * Second facteur non validé (423 `two_fa_required` — voir services/api/client.ts) : la session existe,
+ * mais le code envoyé par e-mail manque. `/verification-2fa` relit `tokpa_pending_email` et, sans
+ * adresse en attente, renvoie déjà de lui-même vers /connexion.
+ */
+export function redirectOnTwoFactorRequired(router: AnyRouter): () => void {
+  const onRequired = () => {
+    if (isPublicPath(router.state.location.pathname)) return;
+    if (router.state.location.pathname === '/verification-2fa') return;
+    toast.error(tx('Code 2FA requis : saisis le code envoyé par e-mail pour déverrouiller la session.'), {
+      id: '2fa-required',
+    });
+    void router.navigate({ to: '/verification-2fa', replace: true });
+  };
+  window.addEventListener('tokpa:2fa-required', onRequired);
+  return () => window.removeEventListener('tokpa:2fa-required', onRequired);
+}
+
+/**
  * Session perdue en cours de navigation (401 : token expiré au bout de 24 h, révoqué, ou base
  * réinitialisée) → retour à la connexion, sauf si l'on est sur une page publique.
  */

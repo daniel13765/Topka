@@ -1,7 +1,7 @@
 import { Suspense, lazy, type ComponentType } from 'react';
 import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
 import { Toaster } from 'react-hot-toast';
-import { guardRoute, redirectOnSessionExpired } from './authGuard';
+import { guardRoute, redirectOnSessionExpired, redirectOnTwoFactorRequired } from './authGuard';
 import LoadingState from '../components/shared/LoadingState';
 import NotFoundPage from '../pages/NotFoundPage';
 import SystemBridge from '../components/system/SystemBridge';
@@ -254,6 +254,7 @@ export const router = createRouter({
 
 // Session perdue en cours de navigation (401 de l'API) → /connexion hors pages publiques (authGuard.ts).
 redirectOnSessionExpired(router);
+redirectOnTwoFactorRequired(router);
 
 declare module '@tanstack/react-router' {
   interface Register {

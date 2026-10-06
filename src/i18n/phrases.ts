@@ -78,7 +78,6 @@ export const EN: Record<string, string> = {
   "Obtenez 500 FCFA sur votre prochaine commande": "Get 500 FCFA off your next order",
   "Les notifications de statut de commande arrivent en temps réel — aucune actualisation nécessaire.": "Order-status notifications arrive in real time — no refresh needed.",
   "Client TOKPa": "TOKPa customer",
-  "Coordonnées du client et messagerie livreur non encore fournies par l’API.": "Customer contact details and rider chat are not provided by the API yet.",
   "Contenu de la commande": "Order contents",
   "Montant de la commande": "Order amount",
   "Marquer comme livré": "Mark as delivered",
@@ -1506,4 +1505,10 @@ export const EN: Record<string, string> = {
   "À déclarer dans": "Declare in",
   "État des services, flux de télémétrie temps réel et garde-fous d’urgence de la plateforme.": "Service status, real-time telemetry stream and the platform’s emergency guard rails.",
   "État du chiffrement au repos et politique de second facteur appliquée par le serveur.": "Encryption-at-rest status and the two-factor policy enforced by the server.",
+  "Code 2FA requis : saisis le code envoyé par e-mail pour déverrouiller la session.": "Two-factor code required: enter the code sent by email to unlock this session.",
+  "GET /livreur/deliveries n’a pas renvoyé de numéro : appel et chat restent désactivés.": "GET /livreur/deliveries returned no phone number: call and chat stay disabled.",
+  "Messagerie non ouverte aux livreurs par le backend : seul le chat reste désactivé.": "Messaging is not opened to riders by the backend: only the chat stays disabled.",
+  "Numéro du client non transmis par GET /livreur/deliveries": "Customer phone number not provided by GET /livreur/deliveries",
+  "le client": "the customer",
+  "Produit retiré du catalogue": "Product removed from the catalogue",
 };
