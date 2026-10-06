@@ -1,10 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { adminApi } from '../../services/api';
-import { listOf, unwrap } from '../../services/api/unwrap';
+import { fmtFcfa, listOf, unwrap } from '../../services/api/unwrap';
 import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError } from '../../utils/apiError';
 import { statutLivreur } from '../../utils/riderStatus';
+import {
+  FILTRE_NEUTRE,
+  commandesAssignables,
+  decrirePosition,
+  disponibleDe,
+  estUrl,
+  filtrerLivreurs,
+  kpiLivreurs,
+  lienCarte,
+  piecesDe,
+  positionDe,
+  vehiculeDe,
+  zoneIdDe,
+} from '../../utils/adminLivreurs';
+// Les pieces justificatives ont une seule forme en base (`livreurs.documents`) : la lire avec les
+// regles du livreur evite que l'administration et l'agent ne voient pas la meme chose.
+import { pieceValidee } from '../../pages/livreur/parametres/profilUtils';
 import { absImageUrl } from '../../utils/imageUrl';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
 import FaIcon from '../../components/shared/FaIcon';
@@ -41,7 +58,13 @@ const ACTIVITE: Record<string, string> = {
  * GET /admin/users?role=livreur (toutes les pages), GET /admin/orders (au plus 500 commandes :
  * activité, taux de succès = livrées / (livrées + annulées), course en cours), GET /admin/zones,
  * PUT /admin/users/{id} (zone, disponibilité, statut), DELETE /admin/users/{id} (désactivation).
- * Laissés tels quels (décision utilisateur P3, aucune donnée backend) : ligne « Véhicule », « Assigner ».
+ * - POST /admin/assign (assigner une commande `en_attente` a ce livreur ; 422 du backend affiche tel quel).
+ *
+ * Ce que le backend ne permet pas, et que l'ecran dit au lieu de le simuler : le NOM du vehicule
+ * (`livreurs.id_vehicule` est un numero nu, aucune route ne sert la table `vehicules`), l'heure de la
+ * derniere position (aucune colonne `position_*_at`), la validation des pieces (`documents` n'est
+ * ecritable que par le livreur via `PUT /profile`), et les horaires du livreur (cols absentes de
+ * `livreurs`, `heure_debut`/`heure_fin` appliques au seul manager par AdminUserController::update).
  */
 export default function AdminLivreursPage() {
   useLanguage();
@@ -112,10 +135,18 @@ export default function AdminLivreursPage() {
   };
   const enCourse = (id: number) => (parLivreur.get(id) ?? []).some((o) => o.statut === 'en_livraison');
 
+  // Filtre LOCAL : `GET /admin/users` ne lit que `role` et `page`, rien n'est renvoye au serveur.
+  const [filtre, setFiltre] = useState({ ...FILTRE_NEUTRE });
+  const [assignOuvert, setAssignOuvert] = useState(false);
+  const [choixCommande, setChoixCommande] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
+  const filtres = filtrerLivreurs(livreurs, filtre, enCourse);
+  const kpi = kpiLivreurs(livreurs, enCourse);
   const [page, setPage] = useState(1);
-  const pages = Math.max(1, Math.ceil(livreurs.length / PER_PAGE));
+  const pages = Math.max(1, Math.ceil(filtres.length / PER_PAGE));
   const current = Math.min(page, pages);
-  const visible = livreurs.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const visible = filtres.slice((current - 1) * PER_PAGE, current * PER_PAGE);
+  const filtreActif = filtre.recherche !== '' || filtre.zone !== '' || filtre.etat !== 'tous' || filtre.pieces !== 'tous';
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -166,11 +197,46 @@ export default function AdminLivreursPage() {
     }
   };
 
+  const assigner = async () => {
+    if (!selected || !choixCommande) return;
+    setAssignSaving(true);
+    try {
+      await adminApi.assignLivreur(Number(choixCommande), Number(selected.id));
+      toast.success(
+        tr(
+          `Commande #${choixCommande} assignée à ${selNom}.`,
+          `Order #${choixCommande} assigned to ${selNom}.`,
+        ),
+        { id: 'admin-livreurs-assign' },
+      );
+      setAssignOuvert(false);
+      setChoixCommande('');
+      reload();
+    } catch (e) {
+      // 422 du backend (livreur non disponible, hors zone, commande déjà prise) : message affiche tel quel.
+      alertApiError(e, 'admin-livreurs-assign');
+    } finally {
+      setAssignSaving(false);
+    }
+  };
+
   const selNom = selected?.nom_complet ?? '—';
   const selPerf = selected ? perf(Number(selected.id)) : null;
   const selStatut = selected ? statutLivreur(selected, enCourse(Number(selected.id))) : null;
   const selActivites = selected ? (parLivreur.get(Number(selected.id)) ?? []).slice(0, 3) : [];
   const selPhoto = absImageUrl(selected?.image_profil);
+  const selPosition = selected ? positionDe(selected) : null;
+  const selPieces = selected ? piecesDe(selected) : { connues: false, pieces: [] };
+  const selVehicule = selected ? vehiculeDe(selected) : { id: null };
+  const selDispo = selected ? disponibleDe(selected) : null;
+  const selZone = selected ? zoneIdDe(selected) : null;
+  // Meme filtre que le backend : seule une commande `en_attente` sans livreur se laisse affecter, et
+  // `ManagerAssignmentController` compare la zone du repere de la commande a celle du livreur.
+  const assignablesBruts = commandesAssignables(orders);
+  const assignables = assignablesBruts.filter((o) => {
+    const z = o?.landmark?.zone_id;
+    return selZone == null ? z == null : Number(z) === selZone;
+  });
 
   return (
     <AdminLayout currentPath="/admin/livreurs" mainClassName="ml-64 h-screen pt-[52px] p-lg flex gap-lg overflow-hidden">
@@ -182,7 +248,73 @@ export default function AdminLivreursPage() {
       )}
       {loading && <p className="m-lg text-label text-text-secondary">{tx("Chargement des données réelles…")}</p>}
       <style>{DESIGN_CSS}</style>
-      <div className="flex-1 bg-white rounded-lg border border-border-default overflow-hidden flex flex-col">
+      <div className="m-lg mb-0 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { cle: 'total', titre: tx("Livreurs reçus"), valeur: String(kpi.total), note: tx("sur GET /admin/users?role=livreur") },
+          { cle: 'ligne', titre: tx("Disponibles"), valeur: kpi.enLigne == null ? '—' : `${kpi.enLigne}`, note: tx("livreurs.disponibilite = true") },
+          { cle: 'course', titre: tx("En course"), valeur: `${kpi.enCourseNombre}`, note: tr(`sur ${orders.length} commande(s) lues`, `from ${orders.length} orders read`) },
+          { cle: 'pieces', titre: tx("Avec pièces au dossier"), valeur: `${kpi.avecPieces}`, note: tx("livreurs.documents, non validables ici") },
+        ].map((k) => (
+          <div key={k.cle} className="rounded-lg border border-border-default bg-white p-md">
+            <p className="font-label text-label uppercase tracking-wider text-text-secondary">{k.titre}</p>
+            <p className="font-h2 text-h2">{k.valeur}</p>
+            <p className="text-micro text-text-secondary">{k.note}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mx-lg mt-md flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 rounded-lg border border-border-default bg-white px-3 py-1.5">
+          <FaIcon name="search" className="text-[18px] text-text-secondary" />
+          <input
+            className="w-44 bg-transparent text-label outline-none"
+            placeholder={tx("Nom, téléphone ou e-mail")}
+            value={filtre.recherche}
+            onChange={(e) => { setPage(1); setFiltre({ ...filtre, recherche: e.target.value }); }}
+          />
+        </label>
+        <select
+          className="rounded-lg border border-border-default bg-white px-2 py-1.5 text-label"
+          value={filtre.etat}
+          onChange={(e) => { setPage(1); setFiltre({ ...filtre, etat: e.target.value as typeof filtre.etat }); }}
+        >
+          <option value="tous">{tx("État : tous")}</option>
+          <option value="en_ligne">{tx("En ligne")}</option>
+          <option value="hors_ligne">{tx("Hors ligne")}</option>
+          <option value="en_course">{tx("En course")}</option>
+        </select>
+        <select
+          className="rounded-lg border border-border-default bg-white px-2 py-1.5 text-label"
+          value={filtre.zone}
+          onChange={(e) => { setPage(1); setFiltre({ ...filtre, zone: e.target.value }); }}
+        >
+          <option value="">{tx("Zone : toutes")}</option>
+          {zones.map((z) => (
+            <option key={z.id} value={String(z.id)}>{z.nom}</option>
+          ))}
+        </select>
+        <select
+          className="rounded-lg border border-border-default bg-white px-2 py-1.5 text-label"
+          value={filtre.pieces}
+          onChange={(e) => { setPage(1); setFiltre({ ...filtre, pieces: e.target.value as typeof filtre.pieces }); }}
+        >
+          <option value="tous">{tx("Pièces : toutes")}</option>
+          <option value="avec">{tx("Avec pièces")}</option>
+          <option value="sans">{tx("Sans pièce")}</option>
+        </select>
+        {filtreActif && (
+          <button
+            type="button"
+            className="rounded-lg border border-border-default bg-white px-3 py-1.5 text-label hover:bg-surface transition-colors"
+            onClick={() => { setPage(1); setFiltre({ ...FILTRE_NEUTRE }); }}
+          >
+            {tx("Réinitialiser le filtre")}
+          </button>
+        )}
+        <span className="text-micro text-text-secondary">
+          {tr(`Filtrage local : la route ne lit que role et page — ${filtres.length} ligne(s) affichée(s) sur ${livreurs.length} reçue(s)`, `Local filtering: the route reads only role and page — ${filtres.length} of ${livreurs.length} received rows shown`)}
+        </span>
+      </div>
+      <div className="flex-1 m-lg mt-md bg-white rounded-lg border border-border-default overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-bg-secondary border-b border-border-default">
@@ -191,6 +323,8 @@ export default function AdminLivreursPage() {
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">ID</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">Zone</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Statut")}</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Pièces")}</th>
+                <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Dernière position")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider">{tx("Succès (%)")}</th>
                 <th className="px-md py-4 font-label text-text-secondary uppercase text-xs tracking-wider text-right">Actions</th>
               </tr>
@@ -198,7 +332,7 @@ export default function AdminLivreursPage() {
             <tbody className="divide-y divide-border-default">
               {!loading && livreurs.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-md py-6 text-center text-text-secondary">
+                  <td colSpan={8} className="px-md py-6 text-center text-text-secondary">
                     {tx("Aucun livreur enregistré.")}
                   </td>
                 </tr>
@@ -219,6 +353,29 @@ export default function AdminLivreursPage() {
                     </td>
                     <td className="px-md py-4 font-body text-text-secondary">#{l.id}</td>
                     <td className="px-md py-4 font-body text-text-secondary">{zoneNom(l.profil?.zone ?? l.zone)}</td>
+                    <td className="px-md py-4 font-body text-text-secondary">{(() => {
+                      const dossier = piecesDe(l);
+                      if (!dossier.connues) return <span title={tx("livreurs.documents n’a pas été renvoyé par l’API")}>{'—'}</span>;
+                      return dossier.pieces.length > 0
+                        ? <span className="inline-flex items-center gap-1 font-bold text-success">{dossier.pieces.length}</span>
+                        : <span className="text-text-tertiary">{tx("aucune")}</span>;
+                    })()}</td>
+                    <td className="px-md py-4 font-mono text-micro">{(() => {
+                      const pos = positionDe(l);
+                      if (!pos) return <span className="text-text-tertiary" title={tx("Aucune position transmise par POST /livreur/position")}>{'—'}</span>;
+                      return (
+                        <a
+                          className="text-primary hover:underline"
+                          href={lienCarte(pos)}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          title={tx("Ouverture dans OpenStreetMap — la base ne stocke aucune heure de position")}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {decrirePosition(pos)}
+                        </a>
+                      );
+                    })()}</td>
                     <td className="px-md py-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${st.badge}`}>
                         <span className={`w-2 h-2 rounded-full ${st.dot}`}></span>
@@ -347,7 +504,83 @@ export default function AdminLivreursPage() {
                 <FaIcon name="motorcycle" className="text-primary p-2 bg-primary-tint rounded-lg" />
                 <div>
                   <p className="text-text-secondary text-micro">{tx("Véhicule")}</p>
-                  <p className="font-body font-medium">Bajaj Pulsar (BJ-9921)</p>
+                  <p className="font-body font-medium" id="detailVehicule">
+                    {selVehicule.id ? tr(`Véhicule #${selVehicule.id}`, `Vehicle #${selVehicule.id}`) : tx("Aucun véhicule enregistré")}
+                  </p>
+                  <p className="text-micro text-text-tertiary">
+                    {tx("La table `vehicules` (nom, type, immatriculation) n’est servie par aucune route : seul l’identifiant circule.")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FaIcon name="bolt" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <div>
+                  <p className="text-text-secondary text-micro">{tx("Disponibilité")}</p>
+                  <p className="font-body font-medium" id="detailDispo">
+                    {selDispo == null ? tx("Inconnue") : selDispo ? tx("Disponible") : tx("Indisponible")}
+                  </p>
+                  <p className="text-micro text-text-tertiary">
+                    {tx("Modifiable ici et par le manager ; le livreur ne peut pas l’écrire via PUT /profile.")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FaIcon name="my_location" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <div>
+                  <p className="text-text-secondary text-micro">{tx("Dernière position reçue")}</p>
+                  {selPosition ? (
+                    <a
+                      className="font-mono text-label text-primary hover:underline"
+                      href={lienCarte(selPosition)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      id="detailPosition"
+                    >
+                      {decrirePosition(selPosition)}
+                    </a>
+                  ) : (
+                    <p className="font-body font-medium text-text-tertiary" id="detailPosition">{tx("Aucune position transmise")}</p>
+                  )}
+                  <p className="text-micro text-text-tertiary">
+                    {tx("`livreurs` n’a pas de colonne d’horodatage de position : l’heure affichée serait fausse.")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <FaIcon name="policy" className="text-primary p-2 bg-primary-tint rounded-lg" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-text-secondary text-micro">{tx("Pièces au dossier")}</p>
+                  {!selPieces.connues ? (
+                    <p className="font-body font-medium text-text-tertiary">{tx("Le champ documents n’a pas été renvoyé.")}</p>
+                  ) : selPieces.pieces.length === 0 ? (
+                    <p className="font-body font-medium text-text-tertiary">{tx("Dossier vide")}</p>
+                  ) : (
+                    <ul className="mt-1 space-y-1">
+                      {selPieces.pieces.map((p, i) => (
+                        <li key={`${p.libelle}-${i}`} className="flex items-start justify-between gap-2 text-label">
+                          <span className="min-w-0 flex-1">
+                            <span className="font-medium">{p.libelle}</span>
+                            {p.valeur &&
+                              (estUrl(p.valeur) ? (
+                                <a className="block truncate text-primary hover:underline" href={p.valeur} target="_blank" rel="noreferrer noopener">
+                                  {p.valeur}
+                                </a>
+                              ) : (
+                                <span className="block truncate font-mono text-micro text-text-secondary">{p.valeur}</span>
+                              ))}
+                          </span>
+                          {p.statut && (
+                            <span className={`shrink-0 rounded px-2 py-0.5 text-micro ${pieceValidee(p.statut) ? 'bg-success-light text-success-dark' : 'bg-surface-container text-text-tertiary'}`}>
+                              {p.statut}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-micro text-text-tertiary">
+                    {tx("Les pièces sont déclarées par le livreur via PUT /profile : aucune route ne permet à l’administration de les valider.")}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -411,6 +644,72 @@ export default function AdminLivreursPage() {
               </ul>
             </div>
           </div>
+          {assignOuvert && (
+            <div className="p-md bg-bg-secondary rounded-lg border border-border-default space-y-sm" id="assignPanel">
+              <p className="text-text-secondary text-micro uppercase">{tx("Assigner une commande")}</p>
+              {assignables.length === 0 ? (
+                <p className="text-label">
+                  {orders.length === 0
+                    ? tx("Aucune commande n'a été lue : GET /admin/orders a échoué ou n'a rien renvoyé — l'assignation est donc indisponible.")
+                    : assignablesBruts.length === 0
+                    ? tx("Aucune commande en attente sans livreur dans la fenêtre de commandes lue.")
+                    : tr(
+                        `${assignablesBruts.length} commande(s) en attente, aucune dans la zone de ce livreur : le backend répondrait « Commande et livreur ne sont pas dans la même zone. »`,
+                        `${assignablesBruts.length} pending order(s), none in this rider’s zone: the backend would refuse.`,
+                      )}
+                </p>
+              ) : (
+                <label className="block text-label">
+                  {tx("Commande")}
+                  <select
+                    className="mt-1 w-full rounded border border-border-default bg-white px-2 py-1 text-label"
+                    value={choixCommande}
+                    onChange={(e) => setChoixCommande(e.target.value)}
+                  >
+                    <option value="">{tx("choisir…")}</option>
+                    {assignables.slice(0, 40).map((o) => (
+                      <option key={String(o.id)} value={String(o.id)}>
+                        {`#${String(o.id)} · ${o.client?.nom_complet ?? tx("client sans nom")} · ${fmtFcfa(o.montant_total)}`}
+                      </option>
+                    ))}
+                  </select>
+                  {assignables.length > 40 && (
+                    <p className="text-micro text-text-tertiary">
+                      {tr(`40 commandes proposées sur ${assignables.length} — la liste n’est pas filtrée côté serveur.`, `40 of ${assignables.length} orders offered — the list is not filtered server-side.`)}
+                    </p>
+                  )}
+                </label>
+              )}
+              {selDispo === false && (
+                <p className="text-label text-error">
+                  {tx("Le middleware `available` refusera l’assignation : ce livreur est marqué indisponible.")}
+                </p>
+              )}
+              <p className="text-micro text-text-tertiary">
+                {tx("POST /admin/assign — la commande passe à ce livreur, la conversation client-livreur est créée et l’événement DeliveryAssigned part en temps réel.")}
+              </p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  className="flex-1 border border-border-default py-1.5 rounded-lg text-label"
+                  onClick={() => {
+                    setAssignOuvert(false);
+                    setChoixCommande('');
+                  }}
+                >
+                  {tx("Annuler")}
+                </button>
+                <button
+                  type="button"
+                  className="flex-1 bg-primary-container text-white py-1.5 rounded-lg font-bold text-label disabled:opacity-60"
+                  disabled={!choixCommande || assignSaving}
+                  onClick={assigner}
+                >
+                  {assignSaving ? tx("Envoi…") : tx("Confirmer l’assignation")}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="mt-xl flex gap-3">
             {selected.telephone ? (
               <a
@@ -424,7 +723,18 @@ export default function AdminLivreursPage() {
                 {tx("Contacter")}
               </button>
             )}
-            <button className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all">{tx("Assigner")}</button>
+            <button
+              type="button"
+              className="flex-1 bg-primary-container text-white py-2 rounded-lg font-bold hover:bg-primary-hover active:scale-97 transition-all disabled:opacity-50"
+              aria-expanded={assignOuvert}
+              disabled={loading}
+              onClick={() => {
+                setAssignOuvert((v) => !v);
+                setChoixCommande('');
+              }}
+            >
+              {assignOuvert ? tx("Fermer l’assignation") : tx("Assigner")}
+            </button>
           </div>
         </aside>
       )}

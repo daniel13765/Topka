@@ -140,6 +140,16 @@ export const adminApi = {
     return response.data;
   },
 
+  // POST /admin/assign - ManagerAssignmentController, la meme méthode que côté manager, réutilisée
+  // pour l'administration (route déclarée dans le groupe `role:admin`). Trois refus possibles, tous
+  // en 422 : `Ce livreur n'est pas disponible.` (middleware `available`), `Le livreur n'appartient
+  // pas à cette zone.` et `Commande et livreur ne sont pas dans la même zone.` Le succès renvoie la
+  // commande fraîche (`{ data: Commande }`, modèle brut) et crée la conversation client-livreur.
+  assignLivreur: async (orderId: number, livreurId: number) => {
+    const response = await apiClient.post('/admin/assign', { order_id: orderId, livreur_id: livreurId });
+    return response.data;
+  },
+
   // Budget proposals (Négociations)
   getProposals: async (params?: { statut?: string; page?: number }) => {
     const response = await apiClient.get('/admin/budget-proposals', { params });

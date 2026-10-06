@@ -37,6 +37,9 @@ const INTERDITS: Array<[string, RegExp]> = [
   ['taux ou compteur inventé', /\b(?:9[0-9]|100)(?:\.\d+)? ?% (?:success|Enforced|opérationnel|de disponibilité)/i],
   ['badge de maquette', /\bMAQUETTE\b/],
   ['donnée de démo dans une table', /(const|let) [A-Z_]*(?:DEMO|DEMO_DATA|SAMPLE|FAKE|FIXTURE)[A-Z_]*/],
+  // Un véhicule de la maquette (« Bajaj Pulsar (BJ-9921) ») a survécu une fois à la conversion : le
+  // backend ne sert aucune route `vehicules`, donc aucun nom de modèle ni plaque ne peut être réel.
+  ['véhicule ou plaque inventé', /\b(?:Bajaj|Pulsar|TVS\s+Apache|Yamaha|Honda|Suzuki|KTM)\b|\b[A-Z]{2}-\d{4}\b/],
 ];
 
 /**
