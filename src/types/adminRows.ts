@@ -111,6 +111,28 @@ export type DashboardRow = {
   [champ: string]: unknown;
 };
 
+/**
+ * Ligne de `GET /admin/payments` — le contrôleur renvoie le modèle `Payment` brut
+ * (`with('order')`), donc les colonnes de la table, en snake_case, sans ressource ni pagination.
+ * `fedapay_token` existe en base et arrive dans la réponse : il n'est ni typé ici, ni lu, ni affiché.
+ */
+export type PaymentRow = {
+  id: number | string;
+  order_id?: number | string | null;
+  client_id?: number | string | null;
+  /** `decimal:2` → chaîne (« 1500.00 »). */
+  montant?: number | string | null;
+  methode?: string | null;
+  statut?: 'en_attente' | 'reussi' | 'echoue' | 'rembourse' | string | null;
+  fedapay_ref?: string | null;
+  recu_url?: string | null;
+  paid_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  order?: { id?: number | string; statut?: string | null; montant_total?: number | string | null } | null;
+  [champ: string]: unknown;
+};
+
 /** Ligne de `GET /admin/bundles` — un pack est une composition de produits avec quantités (F-08). */
 export type BundleRow = {
   id: number | string;

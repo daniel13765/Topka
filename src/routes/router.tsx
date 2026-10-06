@@ -72,6 +72,7 @@ const AdminUsersPage = page(() => import('../pages/admin/AdminUsersPage'));
 const AdminUserDetailPage = page(() => import('../pages/admin/AdminUserDetailPage'));
 const AdminLivreursPage = page(() => import('../pages/admin/AdminLivreursPage'));
 const AdminValidationsPage = page(() => import('../pages/admin/AdminValidationsPage'));
+const AdminPaiementsPage = page(() => import('../pages/admin/AdminPaiementsPage'));
 const AdminLogsPage = page(() => import('../pages/admin/AdminLogsPage'));
 const AdminParametresPage = page(() => import('../pages/admin/AdminParametresPage'));
 const AdminSystemePage = page(() => import('../pages/admin/AdminSystemePage'));
@@ -173,6 +174,7 @@ const adminUserDetailPageRoute = createRoute({
 });
 const adminLivreursPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/livreurs', component: AdminLivreursPage });
 const adminValidationsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/validations', component: AdminValidationsPage });
+const adminPaiementsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/paiements', component: AdminPaiementsPage });
 const adminLogsPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/logs', component: AdminLogsPage });
 const adminParametresPageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/parametres', component: AdminParametresPage });
 const adminSystemePageRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/systeme', component: AdminSystemePage });
@@ -224,6 +226,7 @@ const routeTree = rootRoute.addChildren([
   adminUserDetailPageRoute,
   adminLivreursPageRoute,
   adminValidationsPageRoute,
+  adminPaiementsPageRoute,
   adminLogsPageRoute,
   adminParametresPageRoute,
   adminSystemePageRoute,

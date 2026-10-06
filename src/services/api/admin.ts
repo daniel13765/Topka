@@ -133,6 +133,12 @@ export const adminApi = {
     const response = await apiClient.delete(`/admin/users/${id}`);
     return response.data;
   },
+  // POST /admin/users/{user}/managers (AdminUserController::addAsManager) — le backend n'accepte
+  // qu'un client ou un admin (sinon 400), exige zone_id, et répond 400 si le compte est déjà manager.
+  promoteAsManager: async (id: number, data: { zone_id: number; heure_debut?: string; heure_fin?: string }) => {
+    const response = await apiClient.post(`/admin/users/${id}/managers`, data);
+    return response.data;
+  },
 
   // Budget proposals (Négociations)
   getProposals: async (params?: { statut?: string; page?: number }) => {
@@ -154,6 +160,19 @@ export const adminApi = {
   },
   updateOrderStatus: async (orderId: number, statut: string) => {
     const response = await apiClient.patch(`/admin/orders/${orderId}/status`, { statut });
+    return response.data;
+  },
+
+  // Paiements — GET /admin/payments (PaymentController::listAllPayments) et
+  // GET /admin/clients/payments (listClientPayments). Ces deux routes renvoient le MODÈLE BRUT
+  // (`response()->json(['success' => true, 'data' => $payments])`) : ni ressource, ni pagination,
+  // ni filtre. Attention : le modèle porte `fedapay_token`, que l'interface ne lit jamais.
+  getPayments: async () => {
+    const response = await apiClient.get('/admin/payments');
+    return response.data;
+  },
+  getClientsPayments: async () => {
+    const response = await apiClient.get('/admin/clients/payments');
     return response.data;
   },
 

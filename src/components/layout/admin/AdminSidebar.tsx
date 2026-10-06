@@ -24,6 +24,7 @@ const METIER_ITEMS: NavItem[] = [
   { key: 'utilisateurs', icon: 'group', label: 'Utilisateurs', to: '/admin/utilisateurs' },
   { key: 'livreurs', icon: 'two_wheeler', label: 'Livreurs', to: '/admin/livreurs' },
   { key: 'validations', icon: 'verified_user', label: 'Validations', to: '/admin/validations' },
+  { key: 'paiements', icon: 'receipt_long', label: 'Paiements', to: '/admin/paiements' },
   { key: 'logs', icon: 'history', label: 'Logs & Audit', to: '/admin/logs' },
   { key: 'parametres', icon: 'settings', label: 'Paramètres', to: '/admin/parametres' },
 ];

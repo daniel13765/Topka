@@ -6,6 +6,8 @@ import { listOf, unwrap } from '../../services/api/unwrap';
 import { zoneNom, initials } from '../../services/api/useLiveRows';
 import { alertApiError, extractApiError, formatApiError } from '../../utils/apiError';
 import AdminLayout from '../../components/layout/admin/AdminLayout';
+import { corpsPromotion } from '../../utils/adminPromotion';
+import FaIcon from '../../components/shared/FaIcon';
 import AdminNotificationBell from '../../components/layout/admin/AdminNotificationBell';
 import { useLanguage } from '../../context/LanguageContext';
 import { tr, tx } from '../../i18n/tx';
@@ -188,6 +190,12 @@ export default function AdminUsersPage() {
   const [editZone, setEditZone] = useState('');
   const [editDispo, setEditDispo] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Promotion en manager (POST /admin/users/{user}/managers, backend du 02/10/2026) : la route
+  // exige zone_id et n'accepte qu'un client ou un admin ; les horaires sont optionnels (08:00-18:00).
+  const [promoZone, setPromoZone] = useState('');
+  const [promoDebut, setPromoDebut] = useState('');
+  const [promoFin, setPromoFin] = useState('');
+  const [promoSaving, setPromoSaving] = useState(false);
   const openUser = (u: any) => {
     setSelected(u);
     setEditStatut(statutOf(u) || 'actif');
@@ -212,6 +220,30 @@ export default function AdminUsersPage() {
       alertApiError(e, 'admin-users-save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const promouvoirManager = async (u: any) => {
+    if (!promoZone) {
+      toast.error(tx("Choisis d'abord une zone à confier."), { id: 'admin-users-promo' });
+      return;
+    }
+    const corps = corpsPromotion(promoZone, promoDebut, promoFin);
+    setPromoSaving(true);
+    try {
+      await adminApi.promoteAsManager(Number(u.id), corps);
+      toast.success(tr(`Compte promu manager de ${zoneNom(zones.find((z) => String(z.id) === promoZone))}.`, `Account promoted to manager of ${zoneNom(zones.find((z) => String(z.id) === promoZone))}.`), { id: 'admin-users-promo' });
+      setSelected(null);
+      setPromoZone('');
+      setPromoDebut('');
+      setPromoFin('');
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      // 400 du backend : « L'utilisateur doit être un client ou un administrateur… » ou
+      // « L'utilisateur est déjà un manager. » — message affiché tel quel, pas réécrit.
+      alertApiError(e, 'admin-users-promo');
+    } finally {
+      setPromoSaving(false);
     }
   };
 
@@ -711,6 +743,50 @@ export default function AdminUsersPage() {
                   </label>
                 )}
               </div>
+              {(selRole === 'client' || selRole === 'admin') && (
+                <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-2">
+                  <div className="flex items-center gap-2 font-medium text-gray-700">
+                    <FaIcon name="supervisor_account" className="text-primary" />
+                    <span>{tx("Promouvoir manager de zone")}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    {tx("POST /admin/users/{id}/managers — zone obligatoire, horaires optionnels (08:00-18:00 par défaut). Un livreur ne peut pas être promu par cette route.")}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <label className="col-span-1">
+                      <span className="block text-gray-400 mb-0.5">{tx("Zone")}</span>
+                      <select value={promoZone} onChange={(e) => setPromoZone(e.target.value)} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs">
+                        <option value="">{tx("choisir…")}</option>
+                        {zones.map((z) => (
+                          <option key={z.id} value={z.id}>{z.nom}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="col-span-1">
+                      <span className="block text-gray-400 mb-0.5">{tx("Début")}</span>
+                      <input type="time" value={promoDebut} onChange={(e) => setPromoDebut(e.target.value)} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs" />
+                    </label>
+                    <label className="col-span-1">
+                      <span className="block text-gray-400 mb-0.5">{tx("Fin")}</span>
+                      <input type="time" value={promoFin} onChange={(e) => setPromoFin(e.target.value)} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs" />
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={promoSaving}
+                    onClick={() => promouvoirManager(selected)}
+                    className="btn-press w-full py-2 px-3 bg-primary hover:bg-primary-hover text-white font-medium rounded-[10px] shadow-sm transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                  >
+                    <FaIcon name={promoSaving ? 'sync' : 'check'} className={promoSaving ? 'animate-spin text-sm' : 'text-sm'} />
+                    <span>{promoSaving ? tx("Enregistrement…") : tx("Promouvoir manager")}</span>
+                  </button>
+                </div>
+              )}
+              {selRole === 'livreur' && (
+                <p className="text-[11px] text-gray-500">
+                  {tx("La route de promotion refuse un livreur : le backend n'accepte qu'un client ou un administrateur.")}
+                </p>
+              )}
               <div className="pt-2 flex flex-col gap-2">
                 <label className="font-medium text-gray-700 block">Actions administratives :</label>
                 <div className="flex items-center gap-2">
