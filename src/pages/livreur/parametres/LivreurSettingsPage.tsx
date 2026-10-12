@@ -42,6 +42,7 @@ import {
 } from './profilUtils';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import { rafraichirUtilisateur } from '../../../services/session';
 
 const CARD = 'rounded-[14px] bg-bg-card p-lg shadow-sm flex flex-col gap-md';
 const INPUT =
@@ -188,17 +189,10 @@ export default function LivreurSettingsPage() {
         imageProfilServeur: profile?.image_profil ?? null,
       });
       const res = await authApi.updateProfile(body);
-      // La session locale porte le nom affiché dans les barres : on la rafraîchit tout de suite.
-      const updated = unwrap(res);
-      try {
-        const stored = JSON.parse(localStorage.getItem('tokpa_user') ?? '{}');
-        localStorage.setItem(
-          'tokpa_user',
-          JSON.stringify({ ...stored, ...(updated && typeof updated === 'object' ? updated : {}) }),
-        );
-      } catch {
-        /* session illisible : le rechargement du profil suffira */
-      }
+      // La session locale porte le nom affiche dans les barres : on la rafraichit tout de suite.
+      // `rafraichirUtilisateur` fusionne sur la session existante et ignore une reponse non objet :
+      // une session illisible n'est pas reconstruite a moitie, elle reste telle quelle.
+      rafraichirUtilisateur(unwrap(res));
       window.dispatchEvent(new Event('tokpa:auth-changed'));
       forgetLivreurProfile();
       setPhotoOuverte(false);

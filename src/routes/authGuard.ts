@@ -1,6 +1,7 @@
 import { redirect, type AnyRouter } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
 import { tr, tx } from '../i18n/tx';
+import { aUneSession, nomComplet, role as roleSession, zone as zoneSession } from '../services/session';
 
 /**
  * Garde de connexion (décision du 24/09) : sans session, toute page redirige vers /connexion,
@@ -33,44 +34,28 @@ export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.includes(normPath(pathname));
 }
 
-/** Une session est-elle ouverte côté front ? */
+/**
+ * Une session est-elle ouverte côté front ? La lecture du jeton appartient à
+ * `services/session.ts` (source unique) : ce fichier ne fait que l'exposer aux gardes de routes.
+ * La validité réelle du jeton reste vérifiée par l'API (401 → `tokpa:session-expired`).
+ */
 export function hasSession(): boolean {
-  return !!localStorage.getItem('tokpa_token');
-}
-
-type StoredUser = {
-  nom_complet?: string;
-  prenom?: string;
-  nom?: string;
-  role?: string | { nom?: string } | null;
-  profil?: { zone?: { nom?: string } | null } | null;
-};
-function storedUser(): StoredUser | null {
-  try {
-    const raw = localStorage.getItem('tokpa_user');
-    return raw ? (JSON.parse(raw) as StoredUser) : null;
-  } catch {
-    return null;
-  }
+  return aUneSession();
 }
 
 /** Rôle de l'utilisateur connecté (tokpa_user.role = chaîne ou objet { nom } selon la réponse 2FA). */
 export function currentRole(): string | null {
-  const u = storedUser();
-  const role = typeof u?.role === 'string' ? u.role : u?.role?.nom;
-  return role || null;
+  return roleSession();
 }
 
 /** Nom affichable de l'utilisateur connecté (barres admin / manager / livreur), sinon null. */
 export function currentUserName(): string | null {
-  const u = storedUser();
-  const nom = u?.nom_complet || [u?.prenom, u?.nom].filter(Boolean).join(' ');
-  return nom || null;
+  return nomComplet();
 }
 
 /** Zone du manager / livreur connecté (UserResource.profil.zone, chargée à la 2FA), sinon null. */
 export function currentUserZone(): string | null {
-  return storedUser()?.profil?.zone?.nom || null;
+  return zoneSession();
 }
 
 /** Initiales d'un nom (« Awa Dossou » → « AD »). */

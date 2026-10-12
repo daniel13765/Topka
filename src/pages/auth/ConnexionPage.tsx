@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { memoriserCourrielEnAttente } from '../../services/session';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -39,7 +40,7 @@ export default function ConnexionPage() {
       // API call to Laravel backend POST /api/auth/login
       const res = await authApi.login({ email, password });
       toast.success(res.message || tx("Code 2FA envoyé par email."));
-      localStorage.setItem('tokpa_pending_email', email);
+      memoriserCourrielEnAttente(email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       console.warn('API login error:', err);

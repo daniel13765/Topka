@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { courrielEnAttente, oublierCourrielEnAttente } from '../../services/session';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import toast from 'react-hot-toast';
@@ -32,7 +33,7 @@ export default function Verification2faPage() {
 
   // Email de la connexion (ou de l'inscription) en cours. Aucun email de repli : avant, sans connexion
   // en cours, la page utilisait « client@tokpa.bj », à qui « Renvoyer le code » envoyait un vrai code.
-  const pendingEmail = localStorage.getItem('tokpa_pending_email');
+  const pendingEmail = courrielEnAttente();
 
   const expired = secondsLeft <= 0;
   const blocked = attemptsLeft <= 0;
@@ -60,7 +61,7 @@ export default function Verification2faPage() {
     try {
       // Tentative d'appel API Backend POST /api/auth/verify-2fa
       const res = await authApi.verify2fa({ email: pendingEmail, code });
-      localStorage.removeItem('tokpa_pending_email'); // connexion terminée : l'email en attente ne sert plus
+      oublierCourrielEnAttente(); // connexion terminée : l'email en attente ne sert plus
       toast.success(res.message || tx("Authentification réussie !"));
       // Retour à la page demandée avant la connexion si ce rôle y a droit ; sinon l'espace du rôle
       // (admin → /admin, manager → /manager, client/livreur → accueil).

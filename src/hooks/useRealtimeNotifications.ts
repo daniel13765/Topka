@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { identifiant, jalon } from '../services/session';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../context/LanguageContext';
 import { windowEcho } from '../services/realtime/echo';
@@ -61,16 +62,16 @@ export function useRealtimeNotifications(sessionKey: number): void {
   }, [isFr]);
 
   useEffect(() => {
-    const token = localStorage.getItem('tokpa_token');
-    if (!token) return;
+    if (!jalon()) return;
 
     const echo = windowEcho();
     if (!echo) return;
 
-    const user = JSON.parse(localStorage.getItem('tokpa_user') || '{}') as { id?: number };
-    if (!user.id) return;
+    // L'identifiant vient de la session (source unique) : sans lui, aucun canal a ecouter.
+    const id = identifiant();
+    if (id == null) return;
 
-    const channel = echo.private(`notifications.${user.id}`);
+    const channel = echo.private(`notifications.${id}`);
 
     // Un même événement part vers le canal du client et vers celui du livreur : le vocabulaire
     // doit suivre le rôle, sinon un livreur lit « un livreur a été assigné à votre commande ».

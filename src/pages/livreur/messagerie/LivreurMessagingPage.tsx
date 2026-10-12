@@ -28,6 +28,7 @@ import {
   type Fil,
   type MessageLeger,
 } from './messagerieData';
+import { identifiant } from '../../../services/session';
 
 /**
  * Espace Livreur — Messagerie (maquette `messagerie_tokpa`, rôles inversés : l'interlocuteur est
@@ -56,16 +57,6 @@ const TON_PASTILLE: Record<string, string> = {
 /** Émojis utiles en cours de livraison : insertion locale dans le champ, aucun envoi automatique. */
 const EMOJIS = ['🛵', '✅', '🙏', '📦', '', '👍', '🕐', '😊'];
 
-function monIdentifiant(): number | null {
-  try {
-    const raw = localStorage.getItem('tokpa_user');
-    const id = raw ? (JSON.parse(raw) as { id?: unknown }).id : null;
-    return typeof id === 'number' && Number.isInteger(id) ? id : null;
-  } catch {
-    return null;
-  }
-}
-
 export default function LivreurMessagingPage() {
   useLanguage();
   const navigate = useNavigate();
@@ -89,7 +80,7 @@ export default function LivreurMessagingPage() {
   const [envoi, setEnvoi] = useState(false);
   const [details, setDetails] = useState(false);
 
-  const moi = useMemo(() => monIdentifiant(), []);
+  const moi = useMemo(() => identifiant(), []);
   const filActif = fils.find((f) => f.id === actifId) ?? null;
   const zone = useRef<HTMLDivElement | null>(null);
 

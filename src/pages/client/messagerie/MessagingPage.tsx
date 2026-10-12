@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { identifiant } from '../../../services/session';
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import ClientNavbar from '../../../components/layout/client/ClientNavbar';
@@ -82,14 +83,8 @@ export default function MessagingPage() {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [inputText, setInputText] = useState('');
 
-  const currentUserId = (() => {
-    const raw = localStorage.getItem('tokpa_user');
-    try {
-      return raw ? (JSON.parse(raw) as { id?: number }).id : null;
-    } catch {
-      return null;
-    }
-  })();
+  // Identifiant de la session (source unique) : null tant qu'aucun utilisateur lisible n'est stocke.
+  const currentUserId = identifiant();
 
   // 1) Conversations — GET /api/conversations
   useEffect(() => {

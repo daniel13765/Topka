@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
+import { aUneSession } from '../../services/session';
 import { useCartSync } from '../../hooks/useCartSync';
 import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications';
 
-/** Session ouverte, quel que soit le rôle : le panier clientèle est celui de cet utilisateur. */
-function hasOpenSession(): boolean {
-  return !!localStorage.getItem('tokpa_token');
-}
+/** Session ouverte, quel que soit le rôle : le panier clientèle est celui de cet utilisateur.
+    La lecture du jeton appartient à services/session.ts ; ce composant ne fait que l'appeler. */
+const hasOpenSession = (): boolean => aUneSession();
 
 /**
  * Pont système (rendu null) monté une fois à la racine de l'app :
@@ -18,14 +18,12 @@ function hasOpenSession(): boolean {
  * (événement `tokpa:auth-changed` émis par services/api/auth.ts).
  */
 export default function SystemBridge() {
-  const [sessionKey, setSessionKey] = useState<number>(() =>
-    localStorage.getItem('tokpa_token') ? 1 : 0,
-  );
+  const [sessionKey, setSessionKey] = useState<number>(() => (aUneSession() ? 1 : 0));
   const [cartKey, setCartKey] = useState<number>(() => (hasOpenSession() ? 1 : 0));
 
   useEffect(() => {
     const onAuthChanged = () => {
-      const key = localStorage.getItem('tokpa_token') ? Date.now() : 0;
+      const key = aUneSession() ? Date.now() : 0;
       setSessionKey(key);
       setCartKey(hasOpenSession() ? key : 0);
     };

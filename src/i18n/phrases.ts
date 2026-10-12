@@ -920,6 +920,8 @@ export const EN: Record<string, string> = {
   "Cloche": "Bell",
   "Admin TOKPa": "TOKPa admin",
   "Refuser la course": "Decline delivery",
+  "Refuser la course {course} ? Elle sera remise en file.": "Refuse delivery {course}? It will be returned to the queue.",
+  "Confirmer la livraison de la commande {course} ?": "Confirm the delivery of order {course}?",
   "Démarrer": "Start",
   "Adresse": "Address",
   "Articles": "Items",

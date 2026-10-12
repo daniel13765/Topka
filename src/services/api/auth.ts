@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { effacerSession, enregistrerSession, oublierCourrielEnAttente } from '../session';
 import { initEcho, shutdownEcho } from '../realtime/echo';
 
 export interface LoginPayload {
@@ -58,13 +59,9 @@ export const authApi = {
   verify2fa: async (payload: Verify2FAPayload) => {
     const response = await apiClient.post('/auth/verify-2fa', payload);
     if (response.data?.token) {
-      localStorage.setItem('tokpa_token', response.data.token);
-      // Laravel peut renvoyer une JsonResource directement ou sous une enveloppe `data`.
-      // On stocke toujours l'objet utilisateur lui-même afin que currentRole() puisse
-      // calculer correctement l'espace de destination après la 2FA.
-      const rawUser = response.data.user;
-      const user = rawUser?.data ?? rawUser;
-      localStorage.setItem('tokpa_user', JSON.stringify(user));
+      // `enregistrerSession` normalise l'enveloppe (`user` nu ou sous `data`) : c'est la seule
+      // écriture de la session, et `role()` s'appuie sur cette forme pour la destination post-2FA.
+      enregistrerSession(response.data.token, response.data.user);
       // Connexion réussie → on branche le temps réel Reverb (canaux privés)
       // et on notifie le SystemBridge (panier serveur + notifications).
       initEcho();
@@ -127,8 +124,8 @@ export const authApi = {
     try {
       await apiClient.post('/auth/logout');
     } finally {
-      localStorage.removeItem('tokpa_token');
-      localStorage.removeItem('tokpa_user');
+      effacerSession();
+      oublierCourrielEnAttente();
       shutdownEcho();
       window.dispatchEvent(new Event('tokpa:auth-changed'));
     }

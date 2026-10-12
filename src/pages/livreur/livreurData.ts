@@ -2,8 +2,27 @@ import { authApi, catalogApi, livreurApi } from '../../services/api';
 import { tx, uiLang } from '../../i18n/tx';
 import { listOf, unwrap } from '../../services/api/unwrap';
 import { normaliserPolygone } from '../../utils/googleMaps';
+import type {
+  CommandeItemRow,
+  CommandeLivreurRow,
+  EnveloppeCommandeRow,
+  LivreursProfilRow,
+  PageLivreurRow,
+  RepereZoneRow,
+  UtilisateurRow,
+  ZonePubliqueRow,
+} from '../../types/livreurRows';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Ce module est la SEULE normalisation des réponses de l'espace livreur : il recoit des lignes
+ * typées `*Row` (miroir tolerant de `OrderResource`, `ZoneResource`, `UserResource` — voir
+ * `src/types/livreurRows.ts`) et rend des objets que les ecrans consomment sans cast. `unwrap` et
+ * `listOf` restent le bord tolerants (enveloppe, paginateur, ressource nue) ; `objet()` et
+ * `liste()` sont le point ou l'inconnu du bord devient un type metier — ce qui evite de rouvrir
+ * un `any` dans chaque fonction du module.
+ */
+const liste = <T,>(payload: unknown): T[] => listOf(payload) as T[];
+const objet = <T,>(payload: unknown): T => unwrap(payload) as T;
 
 /**
  * Données de l'espace livreur — UNIQUEMENT l'API (routes `role:livreur` + `zone`) :
@@ -15,7 +34,8 @@ import { normaliserPolygone } from '../../utils/googleMaps';
  * ne charge QUE `items.product` + `landmark` : le nom du client y reste absent, et les coordonnées du
  * point de repère manquent partout (résolues via GET /zones, B-25).
  */
-export interface LivreurOrderItem {
+/** Ligne normalisée : ce que l'ecran affiche, apres `libelleArticle()`. */
+export interface LivreurOrderItem extends CommandeItemRow {
   id: number;
   /** `null` depuis la migration du 29/09 : un produit retiré du catalogue ne supprime plus la ligne. */
   product_id: number | null;
@@ -69,8 +89,18 @@ export const clientTelephone = (o: LivreurOrder | null | undefined): string => {
   return chiffres.length >= 8 ? chiffres : '';
 };
 
-/** OrderResource enveloppe chaque commande dans { success, message, data } (même en liste). */
-export const unwrapOrder = (r: any): LivreurOrder => (r?.data ?? r) as LivreurOrder;
+/**
+ * `OrderResource` enveloppe CHAQUE commande dans `{ success, message, data }` (même en liste) :
+ * sans ce déballage, `order.id` serait `undefined` sur toutes les cartes. Le repli sur la ligne
+ * elle-même couvre les contrôleurs qui rendent la ressource nue.
+ */
+export const unwrapOrder = (r: CommandeLivreurRow | EnveloppeCommandeRow | null | undefined): LivreurOrder => {
+  const enveloppe = r as EnveloppeCommandeRow | null | undefined;
+  return (enveloppe?.data ?? r) as LivreurOrder;
+};
+
+/** Liste de commandes déjà déballées — la même lecture que les écrans, centralisée ici. */
+export const commandesDe = (payload: unknown): LivreurOrder[] => liste<CommandeLivreurRow>(payload).map(unwrapOrder);
 
 export const tokRef = (id: number | string) => `#TOK-${id}`;
 
@@ -111,7 +141,7 @@ export function dateHeure(iso?: string | null): string {
 }
 
 export async function fetchDeliveries(): Promise<LivreurOrder[]> {
-  return listOf(await livreurApi.getDeliveries()).map(unwrapOrder);
+  return commandesDe(await livreurApi.getDeliveries());
 }
 
 /**
@@ -121,19 +151,21 @@ export async function fetchDeliveries(): Promise<LivreurOrder[]> {
 export async function fetchAllHistory(
   maxPages = 25,
 ): Promise<{ orders: LivreurOrder[]; total: number; capped: boolean }> {
-  const first: any = await livreurApi.getHistory(1);
+  const first = (await livreurApi.getHistory(1)) as PageLivreurRow;
   const lastPage = Number(first?.meta?.last_page ?? 1);
   const pages = Math.min(Math.max(lastPage, 1), maxPages);
-  const rest: any[] =
-    pages > 1 ? await Promise.all(Array.from({ length: pages - 1 }, (_, i) => livreurApi.getHistory(i + 2))) : [];
-  const orders = [first, ...rest].flatMap((res: any) => listOf(res).map(unwrapOrder));
+  const rest: PageLivreurRow[] =
+    pages > 1
+      ? ((await Promise.all(Array.from({ length: pages - 1 }, (_, i) => livreurApi.getHistory(i + 2)))) as PageLivreurRow[])
+      : [];
+  const orders = [first, ...rest].flatMap((res) => liste<CommandeLivreurRow>(res).map(unwrapOrder));
   return { orders, total: Number(first?.meta?.total ?? 0) || orders.length, capped: lastPage > maxPages };
 }
 
 /** Zones (id → nom) via GET /zones (public). */
 export async function fetchZoneNames(): Promise<Map<number, string>> {
-  const list = listOf(unwrap(await catalogApi.getZones()));
-  return new Map(list.map((z: any) => [Number(z.id), String(z.nom ?? '—')]));
+  const list = liste<ZonePubliqueRow>(objet(await catalogApi.getZones()));
+  return new Map(list.map((z) => [Number(z.id), String(z.nom ?? '—')] as [number, string]));
 }
 
 /**
@@ -150,18 +182,22 @@ export interface LandmarkGeo {
   zone: string | null;
 }
 
+/** `ZoneResource` ne rend `points_repere` que si la relation est chargée : ailleurs, liste vide. */
+const reperesDe = (zone: ZonePubliqueRow | null | undefined): RepereZoneRow[] =>
+  Array.isArray(zone?.points_repere) ? (zone?.points_repere as RepereZoneRow[]) : [];
+
 const ZONE_TTL_MS = 10 * 60_000;
 let geoCache: { at: number; value: Map<number, LandmarkGeo> } | null = null;
 
 export async function fetchLandmarkGeo(force = false): Promise<Map<number, LandmarkGeo>> {
   if (!force && geoCache && Date.now() - geoCache.at < ZONE_TTL_MS) return geoCache.value;
-  const zones = listOf(unwrap(await catalogApi.getZones())) as any[];
+  const zones = liste<ZonePubliqueRow>(objet(await catalogApi.getZones()));
   /** `Number(null)` vaut 0 : sans ce filtre, un repère sans coordonnées créerait un marqueur à (0,0). */
   const toNum = (v: unknown) => (v == null || v === '' ? Number.NaN : Number(v));
   const value = new Map<number, LandmarkGeo>();
   for (const zone of zones) {
     const zoneName = zone?.nom ? String(zone.nom) : null;
-    for (const lm of (zone?.points_repere ?? []) as any[]) {
+    for (const lm of reperesDe(zone)) {
       const id = toNum(lm?.id);
       const lat = toNum(lm?.latitude);
       const lng = toNum(lm?.longitude);
@@ -199,13 +235,13 @@ let zonesGeoCache: { at: number; value: ZoneGeo[] } | null = null;
 /** Charge toutes les zones avec leur géométrie. Tolère une réponse plate ou enveloppée. */
 export async function fetchZonesGeo(force = false): Promise<ZoneGeo[]> {
   if (!force && zonesGeoCache && Date.now() - zonesGeoCache.at < ZONE_TTL_MS) return zonesGeoCache.value;
-  const brut = listOf(unwrap(await catalogApi.getZones())) as any[];
+  const brut = liste<ZonePubliqueRow>(objet(await catalogApi.getZones()));
   const value: ZoneGeo[] = [];
   for (const zone of brut) {
     const id = Number(zone?.id);
     if (!Number.isFinite(id)) continue;
     const reperes: RepereZone[] = [];
-    for (const lm of (zone?.points_repere ?? []) as any[]) {
+    for (const lm of reperesDe(zone)) {
       const lmId = Number(lm?.id);
       const lat = Number(lm?.latitude);
       const lng = Number(lm?.longitude);
@@ -224,7 +260,7 @@ export function forgetZonesGeo() {
 }
 
 /** `zone_id` est tantôt sur le modèle (`livreurs.zone_id`), tantôt dans la relation chargée. */
-export function resoudreZoneId(profil: any): number | null {
+export function resoudreZoneId(profil: LivreursProfilRow | null | undefined): number | null {
   const candidat = profil?.zone_id ?? profil?.zone?.id;
   const n = Number(candidat);
   return candidat == null || candidat === '' || !Number.isFinite(n) || n <= 0 ? null : n;
@@ -360,8 +396,8 @@ export const fmtDuree = (min: number | null): string => (min == null ? '—' : `
  */
 export async function fetchDeliveredOrder(orderId: number, maxPages = 3): Promise<LivreurOrder | null> {
   for (let page = 1; page <= maxPages; page++) {
-    const res: any = await livreurApi.getHistory(page);
-    const found = listOf(res)
+    const res = (await livreurApi.getHistory(page)) as PageLivreurRow;
+    const found = liste<CommandeLivreurRow>(res)
       .map(unwrapOrder)
       .find((o) => Number(o.id) === Number(orderId));
     if (found) return found;
@@ -379,11 +415,20 @@ export interface DocumentProfil {
 }
 
 export interface LivreurProfile {
-  id?: number;
-  nom?: string;
-  prenom?: string;
-  nom_complet?: string;
-  email?: string;
+  /**
+   * `| null` partout : `UserResource` rend `null`, pas une clé absente, et les ecrans testent la
+   * valeur (`profile?.nom || …`). Un type plus etroit ferait croire a une cle garantie.
+   */
+  /**
+   * `UserResource::id` est un entier ; `Number` n'est pas applique ici parce que le seul consommateur
+   * de ce champ est l'affichage « ID #… » de l'ecran Parametres. Un comparateur devrait passer par
+   * `identifiant()` (services/session.ts), qui lui exige un entier.
+   */
+  id?: number | string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  nom_complet?: string | null;
+  email?: string | null;
   telephone?: string | null;
   image_profil?: string | null;
   disponible: boolean | null;
@@ -431,8 +476,8 @@ let profileCache: { at: number; value: LivreurProfile } | null = null;
 
 export async function fetchLivreurProfile(force = false): Promise<LivreurProfile> {
   if (!force && profileCache && Date.now() - profileCache.at < 60_000) return profileCache.value;
-  const u: any = unwrap(await authApi.getProfile());
-  const profil = u?.profil ?? {};
+  const u = objet<UtilisateurRow>(await authApi.getProfile());
+  const profil: LivreursProfilRow = u?.profil ?? {};
   const value: LivreurProfile = {
     id: u?.id,
     nom: u?.nom,

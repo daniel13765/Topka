@@ -1,4 +1,5 @@
 import Echo from 'laravel-echo';
+import { jalon } from '../session';
 import Pusher from 'pusher-js';
 
 declare global {
@@ -65,13 +66,9 @@ let boundToken: string | null = null;
  * Sans token → déconnecte et retourne null.
  */
 export function initEcho(): Echo<'pusher'> | null {
-  let token = localStorage.getItem('tokpa_token');
-  // Token démo legacy (avant l'alignement API) : plus valide, on le purge proprement.
-  if (token === 'demo_token_sanctum_123') {
-    localStorage.removeItem('tokpa_token');
-    localStorage.removeItem('tokpa_user');
-    token = null;
-  }
+  // `jalon()` purge lui-meme le token de demo legacy (avant l'alignement API) : une seule regle,
+  // au meme endroit que la lecture, donc plus aucun consommateur ne peut le revoir.
+  const token = jalon();
   if (!token) {
     shutdownEcho();
     return null;

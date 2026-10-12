@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { memoriserCourrielEnAttente } from '../../services/session';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -124,7 +125,7 @@ export default function InscriptionPage() {
       });
 
       toast.success(res.message || tx("Compte créé ! Code 2FA envoyé."));
-      localStorage.setItem('tokpa_pending_email', profil.email);
+      memoriserCourrielEnAttente(profil.email);
       navigate({ to: '/verification-2fa' });
     } catch (err: unknown) {
       console.warn('API Register error:', err);

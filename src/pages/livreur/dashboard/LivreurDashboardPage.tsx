@@ -6,8 +6,15 @@ import FaIcon from '../../../components/shared/FaIcon';
 import ApiErrorState from '../../../components/shared/ApiErrorState';
 import LoadingState from '../../../components/shared/LoadingState';
 import { authApi, livreurApi } from '../../../services/api';
-import { fmtFcfa, listOf } from '../../../services/api/unwrap';
+import { fmtFcfa } from '../../../services/api/unwrap';
 import { alertApiError } from '../../../utils/apiError';
+import {
+  CONFIRMATION_REFUS,
+  accepterCourse,
+  demanderConfirmation,
+  refuserCourse,
+  retirerCourse,
+} from '../../../utils/livreurCourses';
 import { currentUserName, initialsOf } from '../../../routes/authGuard';
 import { useLanguage } from '../../../context/LanguageContext';
 import { subscribeRealtimeRefresh } from '../../../hooks/useRealtimeNotifications';
@@ -18,9 +25,9 @@ import {
   destination,
   fetchDeliveries,
   fetchLivreurProfile,
+  commandesDe,
   statutLabel,
   tokRef,
-  unwrapOrder,
   type LivreurOrder,
   type LivreurProfile,
 } from '../livreurData';
@@ -95,7 +102,7 @@ export default function LivreurDashboardPage() {
       .getHistory(1)
       .then((response: { meta?: { total?: number } }) => {
         if (!alive) return;
-        setRecent(listOf(response).map(unwrapOrder).slice(0, 5));
+        setRecent(commandesDe(response).slice(0, 5));
         setHistTotal(Number(response?.meta?.total ?? 0));
       })
       .catch((error) => alive && setHistErr(alertApiError(error, 'livreur-load')));
@@ -127,7 +134,7 @@ export default function LivreurDashboardPage() {
         livreurApi
           .getHistory(1)
           .then((response: { meta?: { total?: number } }) => {
-            setRecent(listOf(response).map(unwrapOrder).slice(0, 5));
+            setRecent(commandesDe(response).slice(0, 5));
             setHistTotal(Number(response?.meta?.total ?? 0));
           })
           .catch(() => undefined);
@@ -146,31 +153,30 @@ export default function LivreurDashboardPage() {
     [recent],
   );
 
+  /**
+   * Les deux actions passent par `utils/livreurCourses` : le backend reste le seul arbitre de la zone
+   * et de la disponibilite (refus = 403/422 avec son message exact, affiche par `alertApiError`),
+   * et rien n'est retire de la liste avant sa reponse.
+   */
   const accept = async (order: LivreurOrder) => {
     setBusy(order.id);
-    try {
-      const response = await livreurApi.acceptDelivery(order.id);
-      toast.success(response?.message ?? tx('Course acceptée.'));
+    const tentative = await accepterCourse(order.id);
+    if (tentative.ok) {
+      toast.success(tentative.data?.message ?? tx('Course acceptée.'));
       navigate({ to: '/livreur/course', search: { commande: order.id } });
-    } catch (error) {
-      alertApiError(error, 'livreur-accept');
-    } finally {
-      setBusy(null);
     }
+    setBusy(null);
   };
 
   const refuse = async (order: LivreurOrder) => {
-    if (!confirm(`Refuser la course ${tokRef(order.id)} ? Elle sera remise en file.`)) return;
+    if (!demanderConfirmation(CONFIRMATION_REFUS, tokRef(order.id))) return;
     setBusy(order.id);
-    try {
-      const response = await livreurApi.refuseDelivery(order.id);
-      toast.success(response?.message ?? tx('Course refusée.'));
-      setDeliveries((items) => (items ?? []).filter((item) => item.id !== order.id));
-    } catch (error) {
-      alertApiError(error, 'livreur-refuse');
-    } finally {
-      setBusy(null);
+    const tentative = await refuserCourse(order.id);
+    if (tentative.ok) {
+      toast.success(tentative.data?.message ?? tx('Course refusée.'));
+      setDeliveries((items) => retirerCourse(items, order.id));
     }
+    setBusy(null);
   };
 
   const statValues = {
@@ -462,7 +468,7 @@ export default function LivreurDashboardPage() {
                       <button
                         type="button"
                         title={tx('Refuser')}
-                        aria-label={`Refuser la course ${tokRef(order.id)}`}
+                        aria-label={`${tx('Refuser la course')} ${tokRef(order.id)}`}
                         disabled={busy === order.id}
                         onClick={() => refuse(order)}
                         className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-error-border bg-error-light text-error-dark transition-all hover:bg-red-100 active:scale-90 disabled:opacity-50"

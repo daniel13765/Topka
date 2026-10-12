@@ -34,6 +34,12 @@ import {
 } from '../livreurData';
 import { useLanguage } from '../../../context/LanguageContext';
 import { tr, tx } from '../../../i18n/tx';
+import {
+  CONFIRMATION_LIVRAISON,
+  appliquerStatut,
+  changerStatutCourse,
+  demanderConfirmation,
+} from '../../../utils/livreurCourses';
 
 /** Envoi de la position au plus toutes les 20 s (POST /livreur/position) pendant la livraison. */
 const GPS_INTERVAL_MS = 20_000;
@@ -175,10 +181,13 @@ export default function LivreurCoursePage() {
 
   const changeStatus = async (statut: 'en_livraison' | 'livre') => {
     if (!order) return;
-    if (statut === 'livre' && !confirm(`Confirmer la livraison de la commande ${tokRef(order.id)} ?`)) return;
+    if (statut === 'livre' && !demanderConfirmation(CONFIRMATION_LIVRAISON, tokRef(order.id))) return;
     setBusy(true);
-    try {
-      const r = await livreurApi.updateStatus(order.id, statut);
+    // Un echec est deja a l'ecran (`alertApiError` dans `changerStatutCourse`, ex. 422
+    // « Transition interdite. », B-22) : aucun changement local, aucun toast de succes, et la course
+    // reste affichee avec son statut reel — c'est le serveur qui decide, pas l'intention du livreur.
+    const tentative = await changerStatutCourse(order.id, statut);
+    if (tentative.ok) {
       if (statut === 'livre') {
         toast.success(tx('Livraison enregistrée.'));
         navigate({
@@ -186,18 +195,15 @@ export default function LivreurCoursePage() {
           search: { commande: order.id },
           state: {
             order: { ...order, statut: 'livre' },
-            deliveredAt: r?.data?.updated_at ?? null,
+            deliveredAt: tentative.data?.data?.updated_at ?? null,
           } as unknown as Record<string, unknown>,
         });
       } else {
         toast.success(tx('Livraison démarrée : votre position est partagée pendant la course.'));
-        setDeliveries((l) => (l ?? []).map((o) => (o.id === order.id ? { ...o, statut } : o)));
+        setDeliveries((l) => appliquerStatut(l, order.id, statut));
       }
-    } catch (e) {
-      alertApiError(e, 'livreur-status'); // ex. 422 « Transition interdite. » (B-22)
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   };
 
   /* ---------- Ce que la carte et les statistiques peuvent réellement afficher ---------- */
