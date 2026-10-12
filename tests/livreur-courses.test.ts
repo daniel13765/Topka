@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  *
  * Le backend est le seul arbitre : `LivreurDeliveryController::accept` et `::refuse` exigent que la
  * commande appartienne au compte (`abort_unless($order->livreur_id === $request->user()->id, 403)`),
- * et la restriction de zone (correctif `1776a3d`) s'ajoute à ce garde. Ces tests verrouillent la
- * partie front de ce contrat : le message du serveur est affiché EXACTEMENT tel quel par
- * `alertApiError`, aucun succès n'est annoncé sur un refus, et aucune course ne disparaît de la liste.
+ * et le middleware `zone` (`middleware(['role:livreur', 'zone'])`, routes/api.php:120) borne la zone.
+ * Ces tests verrouillent la partie front de ce contrat : le message du serveur est affiché EXACTEMENT
+ * tel quel par `alertApiError`, aucun succès n'est annoncé sur un refus, aucune course ne disparaît
+ * de la liste.
  *
- * Les deux rejets testés (422 et 403, deux formulations) prouvent que rien n'est codé en dur : le
- * front ne connaît ni le code, ni la phrase — il les relaie.
+ * Les trois rejets testés viennent de libellés réellement servis par le backend (voir les constantes
+ * ci-dessous) avec des codes différents : le front ne connaît ni le code, ni la phrase, il les
+ * relaie — donc une reformulation côté serveur ne casse rien ici et ne demande aucun correctif front.
  */
 
 vi.mock('../src/services/api', () => ({
@@ -37,7 +39,17 @@ import {
 /** Rejet axios tel que l'intercepteur le transmet (`error.response.status` / `.data`). */
 const rejet = (statut: number, corps: Record<string, unknown>) => ({ response: { status: statut, data: corps } });
 
-const REFUS_ZONE = 'Le livreur n’appartient pas à cette zone.';
+// Les trois phrases ci-dessous sont recopiées du backend (copie locale du 2 octobre), pas inventées.
+// `1776a3d` lui-même est illisible depuis ce sandbox : si le correctif a reformulé, c'est le test de
+// feature PHP qui le dira — le mécanisme testé ici, lui, ne change pas.
+
+/** `app/Http/Middleware/ZoneRestriction.php` : zone du repère de la commande != zone du compte. */
+const REFUS_ZONE = "Cette ressource n'appartient pas à votre zone.";
+
+/** `app/Http/Middleware/ZoneRestriction.php` : le compte n'a aucune zone assignée. */
+const REFUS_SANS_ZONE = 'Aucune zone assignée.';
+
+/** `ManagerAssignmentController.php:25` : la variante renvoyée à l'attribution, côté manager. */
 const REFUS_MEME_ZONE = 'Commande et livreur ne sont pas dans la même zone.';
 
 beforeEach(() => {
@@ -47,30 +59,50 @@ beforeEach(() => {
 });
 
 describe('refus du backend : le message passe, rien d’autre ne bouge', () => {
-  it('relaie le 422 de zone mot pour mot, avec son préfixe HTTP', async () => {
-    vi.mocked(livreurApi.acceptDelivery).mockRejectedValue(rejet(422, { message: REFUS_ZONE }));
+  it('relaie le 403 du middleware de zone mot pour mot, avec son préfixe HTTP', async () => {
+    vi.mocked(livreurApi.acceptDelivery).mockRejectedValue(rejet(403, { message: REFUS_ZONE }));
 
     const tentative = await accepterCourse(9);
 
     expect(tentative.ok).toBe(false);
     if (tentative.ok) throw new Error('un refus ne doit jamais passer pour un succès');
-    expect(tentative.statut).toBe(422);
-    expect(tentative.message).toBe(`[HTTP 422] ${REFUS_ZONE}`);
+    expect(tentative.statut).toBe(403);
+    expect(tentative.message).toBe(`[HTTP 403] ${REFUS_ZONE}`);
     // c'est bien alertApiError qui a parlé : une seule alerte, groupée sous l'identifiant de l'écran
     expect(toast.error).toHaveBeenCalledTimes(1);
-    expect(toast.error).toHaveBeenCalledWith(`[HTTP 422] ${REFUS_ZONE}`, { id: 'livreur-accept' });
+    expect(toast.error).toHaveBeenCalledWith(`[HTTP 403] ${REFUS_ZONE}`, { id: 'livreur-accept' });
     // aucun toast de succès à côté de l'erreur
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it('relaie un 403 avec une autre formulation sans rien codé en dur', async () => {
-    vi.mocked(livreurApi.acceptDelivery).mockRejectedValue(rejet(403, { message: REFUS_MEME_ZONE }));
+  it('relaie la meme alerte sur un refus de mise en file (refuse, pas accept)', async () => {
+    vi.mocked(livreurApi.refuseDelivery).mockRejectedValue(rejet(403, { message: REFUS_ZONE }));
+
+    const tentative = await refuserCourse(9);
+
+    expect(tentative.ok).toBe(false);
+    if (tentative.ok) throw new Error('refus de refuser');
+    expect(toast.error).toHaveBeenCalledWith(`[HTTP 403] ${REFUS_ZONE}`, { id: 'livreur-refuse' });
+  });
+
+  it('relaie un livreur sans zone assignee (403, autre phrase du meme middleware)', async () => {
+    vi.mocked(livreurApi.acceptDelivery).mockRejectedValue(rejet(403, { message: REFUS_SANS_ZONE }));
 
     const tentative = await accepterCourse(9);
 
     expect(tentative.ok).toBe(false);
-    if (tentative.ok) throw new Error('un 403 n’est pas un succès');
-    expect(tentative.message).toBe(`[HTTP 403] ${REFUS_MEME_ZONE}`);
+    if (tentative.ok) throw new Error('aucune zone = refus');
+    expect(tentative.message).toBe(`[HTTP 403] ${REFUS_SANS_ZONE}`);
+  });
+
+  it('relaie une autre formulation et un autre code sans rien coder en dur', async () => {
+    vi.mocked(livreurApi.acceptDelivery).mockRejectedValue(rejet(422, { message: REFUS_MEME_ZONE }));
+
+    const tentative = await accepterCourse(9);
+
+    expect(tentative.ok).toBe(false);
+    if (tentative.ok) throw new Error('un 422 n’est pas un succès');
+    expect(tentative.message).toBe(`[HTTP 422] ${REFUS_MEME_ZONE}`);
   });
 
   it('ajoute les erreurs de champs Laravel au texte, comme partout ailleurs', async () => {
